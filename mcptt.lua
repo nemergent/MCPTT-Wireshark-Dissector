@@ -117,12 +117,35 @@ local source_code = {
     [3] = "Non-Controlling MCPTT Function"
 }
 
+-- 8.2.6.2 Rejection cause codes and rejection cause phrase
+local reject_cause = {
+    [1] = "Another MCPTT client has permission",
+    [2] = "Internal floor control server error ",
+    [3] = "Only one participant",
+    [4] = "Retry-after timer has not expired",
+    [5] = "Receive only",
+    [6] = "No resources available",
+    [7] = " Queue full",
+    [255] = "Other reason"
+}
+
+-- 8.2.10.2 Floor revoke cause codes and revoke cause phrases
+local revoke_cause = {
+    [1] = "Only one MCPTT client",
+    [2] = "Media burst too long",
+    [3] = "No permission to send a Media Burst",
+    [4] = "Media Burst pre-empted",
+    [6] = "No resources available",
+    [255] = "Other reason"
+}
+
 local pf_type           = ProtoField.new ("Message type", "mcptt.type", ftypes.UINT8, type_codes, base.DEC, 0x0F)
 local pf_ackreq         = ProtoField.new ("ACK Requirement", "mcptt.ackreq", ftypes.UINT8, ack_code, base.DEC, 0x10)
 
 local pf_floorprio      = ProtoField.uint16 ("mcptt.floorprio", "Floor Priority", base.DEC)
 local pf_duration       = ProtoField.uint16 ("mcptt.duration", "Duration (s)", base.DEC)
-local pf_reject_cause   = ProtoField.uint16 ("mcptt.rejcause", "Reject Cause bits", base.HEX)
+local pf_reject_cause   = ProtoField.new ("Reject Cause", "mcptt.rejcause", ftypes.UINT16, reject_cause, base.DEC)
+local pf_revoke_cause   = ProtoField.new ("Revoke Cause", "mcptt.revcause", ftypes.UINT16, revoke_cause, base.DEC)
 local pf_reject_phrase  = ProtoField.new ("Reject Phrase", "mcptt.rejphrase", ftypes.STRING)
 local pf_queue_info     = ProtoField.uint16 ("mcptt.queue", "Queue place", base.DEC)
 local pf_queue_unknown  = ProtoField.new ("Queue place not kwnown", "mcptt.queue_unknown", ftypes.STRING)
@@ -153,6 +176,7 @@ mcptt.fields = {
     pf_duration,
     pf_floorprio,
     pf_reject_cause,
+    pf_revoke_cause,
     pf_reject_phrase,
     pf_queue_info,
     pf_queued_id,
@@ -264,8 +288,11 @@ function mcptt.dissector(tvbuf,pktinfo,root)
 
             -- Table 8.2.3.4-1: Reject Cause field coding
             -- Add the Reject Cause bits to the tree
-            -- Any interpretation of the bits?
-            tree:add(pf_reject_cause, tvbuf:range(pos,2))
+            if type().value == 6 then
+                tree:add(pf_revoke_cause, tvbuf:range(pos,2))
+            elseif type().value == 3 then
+                tree:add(pf_reject_cause, tvbuf:range(pos,2))
+            end
             pos = pos + 2
 
             if field_len > 2 then
