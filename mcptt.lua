@@ -60,7 +60,9 @@ dprint2("Lua version = ", _VERSION)
 assert(ProtoExpert.new, "Wireshark does not have the ProtoExpert class, so it's too old - get the latest 1.11.3 or higher")
 
 -- creates a Proto object, but doesn't register it yet
-local mcptt = Proto("mcptt","Mission Critical PTT Protocol")
+local mcptt = Proto("mcptt","Mission Critical PTT Protocol Floor Control")
+local mcptt_pc = Proto("mcpc","Mission Critical PTT Protocol Pre-established session call control")
+local mcptt_cp = Proto("mccp", "Mission Critical MBMS subchannel Control Protocol")
 
 ----------------------------------------
 ---- Some constants for later use ----
@@ -91,6 +93,18 @@ local field_codes = {
 }
 
 -- 3GPP TS 24.380 version 13.0.2 Release 13
+-- Table 8.3.3.1-2: Pre-established session call control fields
+local field_codes_pc = {
+    [0] = "Media Streams",
+    [1] = "MCPTT Session Identity",
+    [2] = "Warning Text",
+    [3] = "MCPTT Group Identity",
+    [4] = "Answer State",
+    [5] = "Inviting MCPTT User Identity",
+    [6] = "Reason Code"
+}
+
+-- 3GPP TS 24.380 version 13.0.2 Release 13
 -- Table 8.2.2-1: Floor control specific messages
 local type_codes = {
     [0] = "Floor Request",
@@ -104,6 +118,15 @@ local type_codes = {
     [9] = "Floor Queue Position Info",
     [10] = "Floor Ack"
 }
+
+-- 3GPP TS 24.380 version 13.0.2 Release 13
+-- Table 8.3.2-1: Pre-established session call control specific messages
+local type_codes_pc = {
+    [0] = "Connect",
+    [1] = "Disconnect",
+    [2] = "Acknoledgement"
+}
+
 local ack_code = {
     [0] = "ACK not required",
     [1] = "ACK Required",
@@ -139,6 +162,53 @@ local revoke_cause = {
     [255] = "Other reason"
 }
 
+-- 3GPP TS 24.380 version 13.0.2 Release 13
+-- 8.3.3.3 MCPTT Session Identity field
+local session_type = {
+    [0] = "No type",
+    [1] = "Private",
+    [3] = "Prearranged",
+    [4] = "Chat"
+}
+
+-- 3GPP TS 24.380 version 13.0.2 Release 13
+-- 8.3.3.6 Answer State field
+local answer_state = {
+    [0] = "Unconfirmed",
+    [1] = "Confirmed"
+}
+
+-- 3GPP TS 24.380 version 13.0.2 Release 13
+-- 8.3.3.8 Reason Code field
+local reason_code = {
+    [0] = "Accepted",
+    [1] = "Busy",
+    [2] = "Not Accepted"
+}
+
+-- 3GPP TS 24.380 version 13.2.0 Release 13
+-- Table 8.4.2-1: MBMS subchannel control protocol messages
+local type_codes_cp = {
+    [0] = "Map Group To Bearer",
+    [1] = "Unmap Group To Bearer"
+}
+
+-- 3GPP TS 24.380 version 13.2.0 Release 13
+-- Table 8.4.3.1-2: MBMS subchannel control protocol specific fields
+local field_codes_cp = {
+	[0] = "Subchannel",
+	[1] = "TMGI",
+	[2] = "Not used",
+	[3] = "MCPTT Group ID"
+}
+
+-- 3GPP TS 24.380 version 13.2.0 Release 13
+-- 8.4.3.3 MBMS Subchannel field
+local ip_version = {
+	[0] = "IP version 4",
+	[1] = "IP version 6"
+}
+
 local pf_type           = ProtoField.new ("Message type", "mcptt.type", ftypes.UINT8, type_codes, base.DEC, 0x0F)
 local pf_ackreq         = ProtoField.new ("ACK Requirement", "mcptt.ackreq", ftypes.UINT8, ack_code, base.DEC, 0x10)
 
@@ -168,7 +238,29 @@ local pf_ind_inmin      = ProtoField.new ("Inminent Peril", "mcptt.inm_peril", f
 
 local pf_debug          = ProtoField.uint16 ("mcptt.debug", "Debug", base.DEC)
 
+local pf_type_pc        = ProtoField.new ("Message type", "mcpc.type", ftypes.UINT8, type_codes_pc, base.DEC, 0x0F)
+local pf_media_stream   = ProtoField.uint8 ("mcpc.stream", "Media Stream", base.DEC)
+local pf_control_channel= ProtoField.uint8 ("mcpc.ctrlchannel", "Control Channel", base.DEC)
+local pf_sess_identity  = ProtoField.new ("MCPTT Session Identity", "mcpc.sess_id", ftypes.STRING)
+local pf_sess_type      = ProtoField.new ("MCPTT Session Type", "mcpc.sess_type", ftypes.UINT8, session_type, base.DEC)
+local pf_warn_text      = ProtoField.new ("Warning text", "mcpc.warn_text", ftypes.STRING)
+local pf_group_id       = ProtoField.new ("MCPTT Group Identity", "mcpc.group_id", ftypes.STRING)
+local pf_answ_state     = ProtoField.new ("Answer State", "mcpc.answ_state", ftypes.UINT16, answer_state, base.DEC)
+local pf_inv_user_id    = ProtoField.new ("Inviting MCPTT User Identity", "mcpc.inv_user_id", ftypes.STRING)
+local pf_reason_code    = ProtoField.new ("Reason Code", "mcpc.reason_code", ftypes.UINT16, reason_code, base.DEC)
 
+local pf_type_cp        = ProtoField.new ("Message type", "mccp.type", ftypes.UINT8, type_codes_cp, base.DEC, 0x0F)
+local pf_group_id_cp    = ProtoField.new ("MCPTT Group Identity", "mccp.group_id", ftypes.STRING)
+local pf_tmgi           = ProtoField.new ("Temporary Mobile Group Identity (TMGI)", "mccp.tmgi", ftypes.BYTES)
+local pf_subchannel     = ProtoField.new ("MBMS Subchannel", "mccp.mbms_subchannel", ftypes.BYTES)
+local pf_audio_m_line   = ProtoField.new ("Audio m-line Number", "mccp.audio_m_line", ftypes.UINT8, nil, base.DEC, 0xF0)
+local pf_floor_m_line   = ProtoField.new ("Floor m-line Number", "mccp.floor_m_line", ftypes.UINT8, nil, base.DEC, 0x0F)
+local pf_ip_version     = ProtoField.new ("IP Version", "mccp.ip_version", ftypes.UINT8, ip_version, base.DEC, 0xF0)
+local pf_floor_ctrl_port = ProtoField.new ("Floor Control Port", "mccp.floor_ctrl_port", ftypes.UINT32)
+local pf_media_port     = ProtoField.new ("Media Port", "mccp.media_port", ftypes.UINT32) 
+local pf_ipv4_addr      = ProtoField.new ("IPv4 Address", "mccp.ipv4_address", ftypes.IPv4)
+local pf_ipv6_addr      = ProtoField.new ("IPv4 Address", "mccp.ipv4_address", ftypes.IPv6)
+	
 mcptt.fields = {
     pf_ackreq,
     pf_type,
@@ -197,16 +289,58 @@ mcptt.fields = {
     pf_debug
 }
 
+mcptt_pc.fields = {
+    pf_type_pc,
+    pf_media_stream,
+    pf_control_channel,
+    pf_sess_identity,
+    pf_sess_type,
+    pf_warn_text,
+    pf_group_id,
+    pf_answ_state,
+    pf_inv_user_id,
+    pf_reason_code
+}
+
+mcptt_cp.fields = {
+    pf_type_cp,
+    pf_group_id_cp,
+    pf_tmgi,
+    pf_subchannel,
+	pf_audio_m_line,
+	pf_floor_m_line,
+	pf_ip_version,
+	pf_floor_ctrl_port,
+	pf_media_port,
+	pf_ipv4_addr,
+	pf_ipv6_addr
+}
+
 -- Expert info
 local ef_bad_field = ProtoExpert.new("mcptt.bad_field", "Field missing or malformed",
                                      expert.group.MALFORMED, expert.severity.WARN)
+local ef_bad_field_pc = ProtoExpert.new("mcptt_pc.bad_field", "Field missing or malformed",
+                                  expert.group.MALFORMED, expert.severity.WARN)
+local ef_bad_field_cp = ProtoExpert.new("mcptt_cp.bad_field", "Field missing or malformed",
+                                  expert.group.MALFORMED, expert.severity.WARN)							  
+								  
 
 mcptt.experts = {
     ef_bad_field
 }
 
+mcptt_pc.experts = {
+    ef_bad_field_pc
+}
+
+mcptt_cp.experts = {
+    ef_bad_field_cp
+}
+
 -- Local values for our use
 local type      = Field.new("mcptt.type")
+local type_pc   = Field.new("mcpc.type")
+local type_cp   = Field.new("mccp.type")
 local grantedid = Field.new("mcptt.grantedid")
 local duration  = Field.new("mcptt.duration")
 local rejphrase = Field.new("mcptt.rejphrase")
@@ -224,7 +358,7 @@ function mcptt.dissector(tvbuf,pktinfo,root)
     -- Add ourselves to the tree
     -- The second argument represent how much packet length this tree represents,
     -- we are taking the entire packet until the end.
-    local tree = root:add(mcptt, tvbuf:range(0,pktlen), "Mission Critical Push-to-talk")
+    local tree = root:add(mcptt, tvbuf:range(0,pktlen), "Mission Critical Push-to-talk: Floor control")
 
     -- Add the MCPTT type and ACK req. to the sub-tree
     tree:add(pf_ackreq, tvbuf:range(0,1))
@@ -461,6 +595,279 @@ function mcptt.dissector(tvbuf,pktinfo,root)
     return pos
 end
 
+function mcptt_pc.dissector(tvbuf,pktinfo,root)
+    dprint2("mcptt_pc.dissector called")
+
+    -- set the protocol column to show our protocol name
+    pktinfo.cols.protocol:set("MCPC")
+
+    -- Save the packet length
+    local pktlen = tvbuf:reported_length_remaining()
+
+    -- Add ourselves to the tree
+    -- The second argument represent how much packet length this tree represents,
+    -- we are taking the entire packet until the end.
+    local tree = root:add(mcptt_pc, tvbuf:range(0,pktlen), "Mission Critical Push-to-talk: Pre-established session call control")
+
+    -- Add the MCPTT type and ACK req. to the sub-tree
+    tree:add(pf_ackreq, tvbuf:range(0,1))
+    tree:add(pf_type_pc, tvbuf:range(0,1))
+
+    dprint2("MESSAGE TYPE:", type_pc().value)
+    local pk_info = "MCPC " .. type_codes_pc[type_pc().value]
+    pktinfo.cols.info = pk_info
+
+    -- We have parsed all the fixed order header
+    local pos = FIXED_HEADER_LEN
+    local pktlen_remaining = pktlen - pos
+
+    while pktlen_remaining > 0 do
+        dprint2("PKT remaining: ", pktlen_remaining)
+        if pktlen_remaining < MIN_FIELD_LEN then
+            tree:add_proto_expert_info(ef_bad_field_pc)
+            return
+        end
+
+        -- Get the Field ID (8 bits)
+        local field_id = tvbuf:range(pos,1)
+        local field_name = field_codes_pc[field_id:uint()]
+        pos = pos +1
+
+        dprint2(field_id:uint())
+        dprint2("FIELD ID: ", field_name)
+        dprint2("POS: ", pos-1)
+
+        if field_name == "Media Streams" then
+            dprint2("============Media Streams")
+            -- Get the field length (8 bits)
+            local field_len = tvbuf:range(pos,1):uint()
+            pos = pos +1
+
+            tree:add(pf_media_stream, tvbuf:range(pos,1))
+            pos = pos +1
+
+            tree:add(pf_control_channel, tvbuf:range(pos,1))
+            pos = pos +1
+
+            pos = pos + field_len
+
+        elseif field_name == "MCPTT Session Identity" then
+            dprint2("============MCPTT Session Identity")
+            -- Get the field length (8 bits)
+            local field_len = tvbuf:range(pos,1):le_uint()
+            pos = pos +1
+
+            -- Add the MCPTT Session Type to the tree
+            tree:add(pf_sess_type, tvbuf:range(pos,1))
+
+            -- Add the MCPTT Session Identity to the tree
+            tree:add(pf_sess_identity, tvbuf:range(pos+1,field_len-1))
+            pos = pos + field_len
+
+            -- Consume the possible padding
+            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
+                pos = pos +1
+            end
+            dprint2("Padding until: ", pos)
+
+        elseif field_name == "Warning Text" then
+            dprint2("============Warning Text")
+            -- Get the field length (8 bits)
+            local field_len = tvbuf:range(pos,1):le_uint()
+            pos = pos +1
+
+            -- Add the Warning Text to the tree
+            tree:add(pf_warn_text, tvbuf:range(pos,field_len))
+            pos = pos + field_len
+
+            -- Consume the possible padding
+            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
+                pos = pos +1
+            end
+            dprint2("Padding until: ", pos)
+
+        elseif field_name == "MCPTT Group Identity" then
+            dprint2("============MCPTT Group Identity")
+            -- Get the field length (8 bits)
+            local field_len = tvbuf:range(pos,1):le_uint()
+            pos = pos +1
+
+            -- Add the MCPTT Group Identity to the tree
+            tree:add(pf_group_id, tvbuf:range(pos,field_len))
+            pos = pos + field_len
+
+            -- Consume the possible padding
+            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
+                pos = pos +1
+            end
+            dprint2("Padding until: ", pos)
+
+        elseif field_name == "Answer State" then --TODO: Not Tested
+            dprint2("============Answer State")
+            -- Get the field length (8 bits)
+            local field_len = tvbuf:range(pos,1):uint()
+            pos = pos +1
+
+            -- Add the Answer State to the tree
+            tree:add(pf_answ_state, tvbuf:range(pos,field_len))
+            pos = pos + field_len
+
+        elseif field_name == "Inviting MCPTT User Identity" then
+            dprint2("============Inviting MCPTT User Identity")
+            -- Get the field length (8 bits)
+            local field_len = tvbuf:range(pos,1):le_uint()
+            pos = pos +1
+
+            -- Add the Inviting MCPTT User Identity to the tree
+            tree:add(pf_inv_user_id, tvbuf:range(pos,field_len))
+            pos = pos + field_len
+
+            -- Consume the possible padding
+            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
+                pos = pos +1
+            end
+            dprint2("Padding until: ", pos)
+
+        elseif field_name == "Reason Code" then --TODO: Not Tested
+            dprint2("============Reason Code")
+            -- Get the field length (8 bits)
+            local field_len = tvbuf:range(pos,1):uint()
+            pos = pos +1
+
+            -- Add the Reason Code to the tree
+            tree:add(pf_reason_code, tvbuf:range(pos,field_len))
+            pos = pos + field_len
+
+        end
+
+        pktlen_remaining = pktlen - pos
+
+    end
+
+
+    dprint2("mcpc.dissector returning",pos)
+
+    -- tell wireshark how much of tvbuff we dissected
+    return pos
+end
+
+function mcptt_cp.dissector(tvbuf,pktinfo,root)
+	dprint2("mcptt_cp.dissector called")
+	
+	-- set the protocol column to show our protocol name
+    pktinfo.cols.protocol:set("MCCP")
+
+    -- Save the packet length
+    local pktlen = tvbuf:reported_length_remaining()
+
+    -- Add ourselves to the tree
+    -- The second argument represent how much packet length this tree represents,
+    -- we are taking the entire packet until the end.
+    local tree = root:add(mcptt_cp, tvbuf:range(0,pktlen), "Mission Critical MBMS subchannel Control Protocol")
+
+    -- Add the MCPTT type and ACK req. to the sub-tree
+    tree:add(pf_type_cp, tvbuf:range(0,1))
+
+    dprint2("MESSAGE TYPE:", type_cp().value)
+    local pk_info = "MCCP " .. type_codes_cp[type_cp().value]
+    pktinfo.cols.info = pk_info
+
+    -- We have parsed all the fixed order header
+    local pos = FIXED_HEADER_LEN
+    local pktlen_remaining = pktlen - pos
+	
+	while pktlen_remaining > 0 do
+        dprint2("PKT remaining: ", pktlen_remaining)
+        if pktlen_remaining < MIN_FIELD_LEN then
+            tree:add_proto_expert_info(ef_bad_field_cp)
+            return
+        end
+
+        -- Get the Field ID (8 bits)
+        local field_id = tvbuf:range(pos,1)
+        local field_name = field_codes_cp[field_id:uint()]
+        pos = pos +1
+
+        dprint2(field_id:uint())
+        dprint2("FIELD ID: ", field_name)
+        dprint2("POS: ", pos-1)
+
+        if field_name == "MCPTT Group ID" then
+            dprint2("============MCPTT Group ID")
+            -- Get the field length (8 bits)
+            local field_len = tvbuf:range(pos,1):le_uint()
+            pos = pos +1
+
+            -- Add the MCPTT Group Identity to the tree
+            tree:add(pf_group_id_cp, tvbuf:range(pos,field_len))
+            pos = pos + field_len
+
+            -- Consume the possible padding
+            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
+                pos = pos +1
+            end
+            dprint2("Padding until: ", pos)
+
+        elseif field_name == "TMGI" then 
+            dprint2("============TMGI")
+            -- Get the field length (8 bits)
+            local field_len = tvbuf:range(pos,1):le_uint()
+            pos = pos +1
+
+            -- Add the TMGI to the tree
+            tree:add(pf_tmgi, tvbuf:range(pos,field_len))
+            pos = pos + field_len
+			
+            dprint2("Padding until: ", pos)			
+
+        elseif field_name == "Subchannel" then
+            dprint2("============Subchannel")
+            -- Get the field length (8 bits)
+            local field_len = tvbuf:range(pos,1):le_uint()
+            pos = pos +1
+
+            -- Add the MBMS Subchannel to the tree
+            -- Create a new subtree for the MBMS Subchannel
+            local subch_tree = tree:add(pf_subchannel, tvbuf:range(pos,field_len))
+			
+			subch_tree:add(pf_audio_m_line, tvbuf:range(pos, 1))
+			subch_tree:add(pf_floor_m_line, tvbuf:range(pos, 1))
+			local floor_line = bit.band(tvbuf:range(pos, 1):int(), 0x000F)
+			pos = pos +1
+			subch_tree:add(pf_ip_version, tvbuf:range(pos, 1))
+			local loc_ip_version = bit.rshift(tvbuf:range(pos, 1):int(), 4)
+			local loc_ip_version_name = ip_version[loc_ip_version]
+			pos = pos +1
+			if floor_line ~= 0 then
+				subch_tree:add(pf_floor_ctrl_port, tvbuf:range(pos, 4))
+				pos = pos +4
+			end
+			subch_tree:add(pf_media_port, tvbuf:range(pos, 4))
+			pos = pos +4
+			if loc_ip_version_name == "IP version 4" then
+              subch_tree:add(pf_ipv4_addr, tvbuf:range(pos, 4))
+			  pos = pos +4
+			elseif loc_ip_version_name == "IP version 6" then
+			  subch_tree:add(pf_ipv6_addr, tvbuf:range(pos, 16))
+			  pos = pos +16
+			end
+            
+        end
+
+        pktlen_remaining = pktlen - pos
+
+    end
+
+	
+
+    dprint2("mccp.dissector returning",pos)
+	
+	-- tell wireshark how much of tvbuff we dissected
+    return pos
+end
+
 -- we want to have our protocol dissection invoked for a specific RTCP APP Name,
 -- so get the rtcp.app.name dissector table and add our protocol to it
 DissectorTable.get("rtcp.app.name"):add("MCPT", mcptt.dissector)
+DissectorTable.get("rtcp.app.name"):add("MCPC", mcptt_pc.dissector)
+DissectorTable.get("rtcp.app.name"):add("MCCP", mcptt_cp.dissector)
