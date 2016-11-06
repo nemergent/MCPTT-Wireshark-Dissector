@@ -3,6 +3,7 @@ Mission Critical Push To Talk (MCPTT) Wireshark dissector
 
 * Author: Iñigo Ruiz Relloso
 * Email:  iruizr7@gmail.com
+* Contributors: Mikel Ramos (mikel.ramos@ehu.eus)
 * Copyright (c) 2016, Nemergent Initiative http://nemergent.com
 
 This MCPTT dissector is intended to provide supported protocol analyzers with a
