@@ -31,12 +31,25 @@ Installation / Use with Wireshark
 To add the dissector to your permanent dissector library, you can copy the
 mcptt.lua file to the following folder.  
 
-    ~/.wireshark/plugins/mcptt.lua
-
+    ~/.wireshark/plugins/mcptt.lua	
+	
 Note that the `~` (tilde) symbol usually expands into your current user's home
 folder in most of the Linux/Mac shells.  
 If you intend to use the dissector with another user, just copy it to the
 intended user's homologous folder.
+
+Other linux distributions search for wireshark plugins in other system folders.
+For example, we have tested other distributions where user plugins should be
+placed in the following folder:
+
+    ~/.config/wireshark/plugins/mcptt.lua 
+	
+Windows users should add the plugin to the following folder:
+
+	%APPDATA%\Wireshark\plugins\mcptt.lua
+
+You can check the specific folder in Help > About Wireshark > Folders > Personal
+plugins.
 
 ## Occasional use
 
