@@ -871,3 +871,12 @@ end
 DissectorTable.get("rtcp.app.name"):add("MCPT", mcptt.dissector)
 DissectorTable.get("rtcp.app.name"):add("MCPC", mcptt_pc.dissector)
 DissectorTable.get("rtcp.app.name"):add("MCCP", mcptt_cp.dissector)
+
+
+-- we add all new MIME types of MCPTT protocol to the XML dissector
+DissectorTable.get("media_type"):add("application/vnd.3gpp.mcptt-info+xml", Dissector.get("xml"))
+DissectorTable.get("media_type"):add("application/vnd.3gpp.mcptt-mbms-usage-info+xml", Dissector.get("xml"))
+DissectorTable.get("media_type"):add("application/vnd.3gpp.mcptt-location-info+xml", Dissector.get("xml"))
+DissectorTable.get("media_type"):add("application/vnd.3gpp.mcptt-affiliation-command+xml", Dissector.get("xml"))
+DissectorTable.get("media_type"):add("application/vnd.3gpp.mcptt-floor-request+xml", Dissector.get("xml"))
+DissectorTable.get("media_type"):add("application/vnd.3gpp.mcptt-signed+xml", Dissector.get("xml"))
