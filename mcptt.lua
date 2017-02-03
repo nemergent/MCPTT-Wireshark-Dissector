@@ -880,3 +880,7 @@ DissectorTable.get("media_type"):add("application/vnd.3gpp.mcptt-location-info+x
 DissectorTable.get("media_type"):add("application/vnd.3gpp.mcptt-affiliation-command+xml", Dissector.get("xml"))
 DissectorTable.get("media_type"):add("application/vnd.3gpp.mcptt-floor-request+xml", Dissector.get("xml"))
 DissectorTable.get("media_type"):add("application/vnd.3gpp.mcptt-signed+xml", Dissector.get("xml"))
+DissectorTable.get("media_type"):add("application/vnd.3gpp.mcptt-ue-init-config+xml", Dissector.get("xml"))
+DissectorTable.get("media_type"):add("application/vnd.3gpp.mcptt-ue-config+xml", Dissector.get("xml"))
+DissectorTable.get("media_type"):add("application/vnd.3gpp.mcptt.user-profile+xml", Dissector.get("xml"))
+DissectorTable.get("media_type"):add("application/vnd.3gpp.mcptt-service-config+xml", Dissector.get("xml"))
