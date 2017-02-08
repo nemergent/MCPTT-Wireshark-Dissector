@@ -124,7 +124,7 @@ local type_codes = {
 local type_codes_pc = {
     [0] = "Connect",
     [1] = "Disconnect",
-    [2] = "Acknoledgement"
+    [2] = "Acknowledgement"
 }
 
 local ack_code = {
