@@ -649,12 +649,11 @@ function mcptt_pc.dissector(tvbuf,pktinfo,root)
             tree:add(pf_control_channel, tvbuf:range(pos,1))
             pos = pos +1
 
-            pos = pos + field_len
 
         elseif field_name == "MCPTT Session Identity" then
             dprint2("============MCPTT Session Identity")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):le_uint()
+            local field_len = tvbuf:range(pos,1):uint()
             pos = pos +1
 
             -- Add the MCPTT Session Type to the tree
@@ -665,9 +664,11 @@ function mcptt_pc.dissector(tvbuf,pktinfo,root)
             pos = pos + field_len
 
             -- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
+            if (2 + field_len) % 4 ~= 0 then
+                local padding_bytes = 4 - ((2 + field_len) % 4)
+                pos = pos + padding_bytes
             end
+            
             dprint2("Padding until: ", pos)
 
         elseif field_name == "Warning Text" then
