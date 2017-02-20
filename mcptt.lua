@@ -234,7 +234,7 @@ local pf_ind_normal     = ProtoField.new ("Normal", "mcptt.normal", ftypes.UINT1
 local pf_ind_broad      = ProtoField.new ("Broadcast Group", "mcptt.broadcast", ftypes.UINT16, nil, base.DEC, 0x4000)
 local pf_ind_sys        = ProtoField.new ("System", "mcptt.system", ftypes.UINT16, nil, base.DEC, 0x2000)
 local pf_ind_emerg      = ProtoField.new ("Emergency", "mcptt.emergency", ftypes.UINT16, nil, base.DEC, 0x1000)
-local pf_ind_inmin      = ProtoField.new ("Inminent Peril", "mcptt.inm_peril", ftypes.UINT16, nil, base.DEC, 0x0800)
+local pf_ind_immin      = ProtoField.new ("Imminent Peril", "mcptt.imm_peril", ftypes.UINT16, nil, base.DEC, 0x0800)
 
 local pf_debug          = ProtoField.uint16 ("mcptt.debug", "Debug", base.DEC)
 
