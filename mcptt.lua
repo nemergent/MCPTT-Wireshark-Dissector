@@ -235,7 +235,7 @@ local pf_ind_normal     = ProtoField.new ("Normal", "mcptt.normal", ftypes.UINT1
 local pf_ind_broad      = ProtoField.new ("Broadcast Group", "mcptt.broadcast", ftypes.UINT16, nil, base.DEC, 0x4000)
 local pf_ind_sys        = ProtoField.new ("System", "mcptt.system", ftypes.UINT16, nil, base.DEC, 0x2000)
 local pf_ind_emerg      = ProtoField.new ("Emergency", "mcptt.emergency", ftypes.UINT16, nil, base.DEC, 0x1000)
-local pf_ind_inmin      = ProtoField.new ("Inminent Peril", "mcptt.inm_peril", ftypes.UINT16, nil, base.DEC, 0x0800)
+local pf_ind_immin      = ProtoField.new ("Imminent Peril", "mcptt.imm_peril", ftypes.UINT16, nil, base.DEC, 0x0800)
 
 local pf_debug          = ProtoField.uint16 ("mcptt.debug", "Debug", base.DEC)
 
@@ -285,7 +285,7 @@ mcptt.fields = {
     pf_ind_broad,
     pf_ind_sys,
     pf_ind_emerg,
-    pf_ind_inmin,
+    pf_ind_immin,
     pf_msg_type,
     pf_debug
 }
@@ -565,7 +565,7 @@ function mcptt.dissector(tvbuf,pktinfo,root)
             ind_tree:add(pf_ind_broad, tvbuf:range(pos,field_len))
             ind_tree:add(pf_ind_sys, tvbuf:range(pos,field_len))
             ind_tree:add(pf_ind_emerg, tvbuf:range(pos,field_len))
-            ind_tree:add(pf_ind_inmin, tvbuf:range(pos,field_len))
+            ind_tree:add(pf_ind_immin, tvbuf:range(pos,field_len))
             pos = pos + field_len
 
         elseif field_name == "User ID" then --TODO: Not Tested
