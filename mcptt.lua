@@ -67,7 +67,8 @@ local mcptt_cp = Proto("mccp", "Mission Critical MBMS subchannel Control Protoco
 ----------------------------------------
 ---- Some constants for later use ----
 -- the fixed order header size
-local FIXED_HEADER_LEN = 8
+-- local FIXED_HEADER_LEN = 8 (this value did not include app name: 'MCPT', 'MCPC' or 'MCPC')
+local FIXED_HEADER_LEN = 12
 
 -- The smallest possible MCPTT field size
 -- Has to be at least a field ID (8 bits), the value length (8 bits) and a NULL value.
@@ -234,7 +235,7 @@ local pf_ind_normal     = ProtoField.new ("Normal", "mcptt.normal", ftypes.UINT1
 local pf_ind_broad      = ProtoField.new ("Broadcast Group", "mcptt.broadcast", ftypes.UINT16, nil, base.DEC, 0x4000)
 local pf_ind_sys        = ProtoField.new ("System", "mcptt.system", ftypes.UINT16, nil, base.DEC, 0x2000)
 local pf_ind_emerg      = ProtoField.new ("Emergency", "mcptt.emergency", ftypes.UINT16, nil, base.DEC, 0x1000)
-local pf_ind_immin      = ProtoField.new ("Imminent Peril", "mcptt.imm_peril", ftypes.UINT16, nil, base.DEC, 0x0800)
+local pf_ind_inmin      = ProtoField.new ("Inminent Peril", "mcptt.inm_peril", ftypes.UINT16, nil, base.DEC, 0x0800)
 
 local pf_debug          = ProtoField.uint16 ("mcptt.debug", "Debug", base.DEC)
 
