@@ -75,8 +75,23 @@ local FIXED_HEADER_LEN = 12
 local MIN_FIELD_LEN = 2
 
 -- 3GPP TS 24.380 version 13.0.2 Release 13
+-- with 3GPP TS 24.380 version 13.3.0 Release 13 changes to field codes
 -- Table 8.2.3.1-2: Floor control specific fields
 local field_codes = {
+    [0] = "Floor Priority",
+    [1] = "Duration",
+    [2] = "Reject Cause",
+    [3] = "Queue Info",
+    [4] = "Granted Party's Identity",
+    [5] = "Permission to Request the Floor",
+    [6] = "User ID",
+    [7] = "Queue Size",
+    [8] = "Message Sequence-Number",
+    [9] = "Queued User ID",
+    [10] = "Source",
+    [11] = "Track Info",
+    [12] = "Message Type",
+    [13] = "Floor Indicator",
     [102] = "Floor Priority",
     [103] = "Duration",
     [104] = "Reject Cause",
