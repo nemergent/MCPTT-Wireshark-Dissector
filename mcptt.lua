@@ -210,11 +210,12 @@ local type_codes_cp = {
 }
 
 -- 3GPP TS 24.380 version 13.2.0 Release 13
+-- with TS 24.380 version 13.3.0 Release 13 changes
 -- Table 8.4.3.1-2: MBMS subchannel control protocol specific fields
 local field_codes_cp = {
 	[0] = "Subchannel",
 	[1] = "TMGI",
-	[2] = "Not used",
+	[2] = "MCPTT Group ID",
 	[3] = "MCPTT Group ID"
 }
 
