@@ -62,7 +62,7 @@ assert(ProtoExpert.new, "Wireshark does not have the ProtoExpert class, so it's 
 -- creates a Proto object, but doesn't register it yet
 local mcptt = Proto("mcptt","Mission Critical PTT Protocol Floor Control")
 local mcptt_pc = Proto("mcpc","Mission Critical PTT Protocol Pre-established session call control")
-local mcptt_cp = Proto("mccp", "Mission Critical MBMS subchannel Control Protocol")
+local mcptt_cp = Proto("mcmc", "Mission Critical MBMS subchannel Control Protocol")
 
 ----------------------------------------
 ---- Some constants for later use ----
@@ -266,17 +266,17 @@ local pf_answ_state     = ProtoField.new ("Answer State", "mcpc.answ_state", fty
 local pf_inv_user_id    = ProtoField.new ("Inviting MCPTT User Identity", "mcpc.inv_user_id", ftypes.STRING)
 local pf_reason_code    = ProtoField.new ("Reason Code", "mcpc.reason_code", ftypes.UINT16, reason_code, base.DEC)
 
-local pf_type_cp        = ProtoField.new ("Message type", "mccp.type", ftypes.UINT8, type_codes_cp, base.DEC, 0x0F)
-local pf_group_id_cp    = ProtoField.new ("MCPTT Group Identity", "mccp.group_id", ftypes.STRING)
-local pf_tmgi           = ProtoField.new ("Temporary Mobile Group Identity (TMGI)", "mccp.tmgi", ftypes.BYTES)
-local pf_subchannel     = ProtoField.new ("MBMS Subchannel", "mccp.mbms_subchannel", ftypes.BYTES)
-local pf_audio_m_line   = ProtoField.new ("Audio m-line Number", "mccp.audio_m_line", ftypes.UINT8, nil, base.DEC, 0xF0)
-local pf_floor_m_line   = ProtoField.new ("Floor m-line Number", "mccp.floor_m_line", ftypes.UINT8, nil, base.DEC, 0x0F)
-local pf_ip_version     = ProtoField.new ("IP Version", "mccp.ip_version", ftypes.UINT8, ip_version, base.DEC, 0xF0)
-local pf_floor_ctrl_port = ProtoField.new ("Floor Control Port", "mccp.floor_ctrl_port", ftypes.UINT32)
-local pf_media_port     = ProtoField.new ("Media Port", "mccp.media_port", ftypes.UINT32) 
-local pf_ipv4_addr      = ProtoField.new ("IPv4 Address", "mccp.ipv4_address", ftypes.IPv4)
-local pf_ipv6_addr      = ProtoField.new ("IPv4 Address", "mccp.ipv4_address", ftypes.IPv6)
+local pf_type_cp        = ProtoField.new ("Message type", "mcmc.type", ftypes.UINT8, type_codes_cp, base.DEC, 0x0F)
+local pf_group_id_cp    = ProtoField.new ("MCPTT Group Identity", "mcmc.group_id", ftypes.STRING)
+local pf_tmgi           = ProtoField.new ("Temporary Mobile Group Identity (TMGI)", "mcmc.tmgi", ftypes.BYTES)
+local pf_subchannel     = ProtoField.new ("MBMS Subchannel", "mcmc.mbms_subchannel", ftypes.BYTES)
+local pf_audio_m_line   = ProtoField.new ("Audio m-line Number", "mcmc.audio_m_line", ftypes.UINT8, nil, base.DEC, 0xF0)
+local pf_floor_m_line   = ProtoField.new ("Floor m-line Number", "mcmc.floor_m_line", ftypes.UINT8, nil, base.DEC, 0x0F)
+local pf_ip_version     = ProtoField.new ("IP Version", "mcmc.ip_version", ftypes.UINT8, ip_version, base.DEC, 0xF0)
+local pf_floor_ctrl_port = ProtoField.new ("Floor Control Port", "mcmc.floor_ctrl_port", ftypes.UINT32)
+local pf_media_port     = ProtoField.new ("Media Port", "mcmc.media_port", ftypes.UINT32) 
+local pf_ipv4_addr      = ProtoField.new ("IPv4 Address", "mcmc.ipv4_address", ftypes.IPv4)
+local pf_ipv6_addr      = ProtoField.new ("IPv4 Address", "mcmc.ipv4_address", ftypes.IPv6)
 	
 mcptt.fields = {
     pf_ackreq,
@@ -357,7 +357,7 @@ mcptt_cp.experts = {
 -- Local values for our use
 local type      = Field.new("mcptt.type")
 local type_pc   = Field.new("mcpc.type")
-local type_cp   = Field.new("mccp.type")
+local type_cp   = Field.new("mcmc.type")
 local grantedid = Field.new("mcptt.grantedid")
 local duration  = Field.new("mcptt.duration")
 local rejphrase = Field.new("mcptt.rejphrase")
@@ -773,7 +773,7 @@ function mcptt_cp.dissector(tvbuf,pktinfo,root)
 	dprint2("mcptt_cp.dissector called")
 	
 	-- set the protocol column to show our protocol name
-    pktinfo.cols.protocol:set("MCCP")
+    pktinfo.cols.protocol:set("MCMC")
 
     -- Save the packet length
     local pktlen = tvbuf:reported_length_remaining()
@@ -787,7 +787,7 @@ function mcptt_cp.dissector(tvbuf,pktinfo,root)
     tree:add(pf_type_cp, tvbuf:range(0,1))
 
     dprint2("MESSAGE TYPE:", type_cp().value)
-    local pk_info = "MCCP " .. type_codes_cp[type_cp().value]
+    local pk_info = "MCMC " .. type_codes_cp[type_cp().value]
     pktinfo.cols.info = pk_info
 
     -- We have parsed all the fixed order header
@@ -878,7 +878,7 @@ function mcptt_cp.dissector(tvbuf,pktinfo,root)
 
 	
 
-    dprint2("mccp.dissector returning",pos)
+    dprint2("mcmc.dissector returning",pos)
 	
 	-- tell wireshark how much of tvbuff we dissected
     return pos
@@ -888,6 +888,7 @@ end
 -- so get the rtcp.app.name dissector table and add our protocol to it
 DissectorTable.get("rtcp.app.name"):add("MCPT", mcptt.dissector)
 DissectorTable.get("rtcp.app.name"):add("MCPC", mcptt_pc.dissector)
+DissectorTable.get("rtcp.app.name"):add("MCMC", mcptt_cp.dissector)
 DissectorTable.get("rtcp.app.name"):add("MCCP", mcptt_cp.dissector)
 
 
