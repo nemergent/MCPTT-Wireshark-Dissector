@@ -3,13 +3,15 @@ Mission Critical Push To Talk (MCPTT) Wireshark dissector
 
 * Author: Iñigo Ruiz Relloso
 * Email:  iruizr7@gmail.com
-* Contributors: Mikel Ramos (mikel.ramos@ehu.eus)
-* Copyright (c) 2017, Nemergent Initiative http://nemergent.com
+* Contributors: Mikel Ramos (mikel.ramos@ehu.eus), Iñigo García (inigo.garcia@nemergent-solutions.com)
+* Copyright (c) 2018, Nemergent Initiative http://nemergent.com
 
 This MCPTT dissector is intended to provide supported protocol analyzers with a
 better understanding of the MCPTT protocol designed by 3GPP.
 
 This work was made to be conformant to 3GPP TS 24.380 version 13.3.0 Release 13.
+
+In June 2018 MCVideo Release 14 features were added according to 3GPP TS 24.581 version 14.4.0.
 
 The MCPTT dissector by Nemergent Initiative is under the GPLv3 license, please
 refer to the LICENSE.txt file for further information.
@@ -51,6 +53,8 @@ Windows users should add the plugin to the following folder:
 You can check the specific folder in Help > About Wireshark > Folders > Personal
 plugins.
 
+After the MCVideo update, the mcvideo.lua file should also be installed in the same folder.
+
 ## Occasional use
 
 To use the dissector without having to install the file, an argument can be
@@ -61,6 +65,7 @@ supplied to both Wireshark and Tshark as below:
 
 **Please note that using this form while already having the dissector installed
 in the user's wireshark plugins folder is discouraged and causes errors.**
+
 
 ## RTCP dissection troubleshooting
 
@@ -85,3 +90,4 @@ Use the following switch at the command line:
 
 Specifying the used port for the MCPTT or any other filter that is suitable
 for you.
+
