@@ -92,6 +92,7 @@ local field_codes = {
     [11] = "Track Info",
     [12] = "Message Type",
     [13] = "Floor Indicator",
+    [14] = "SSRC",
     [102] = "Floor Priority",
     [103] = "Duration",
     [104] = "Reject Cause",
@@ -253,6 +254,8 @@ local pf_ind_sys        = ProtoField.new ("System", "mcptt.system", ftypes.UINT1
 local pf_ind_emerg      = ProtoField.new ("Emergency", "mcptt.emergency", ftypes.UINT16, nil, base.DEC, 0x1000)
 local pf_ind_immin      = ProtoField.new ("Imminent Peril", "mcptt.imm_peril", ftypes.UINT16, nil, base.DEC, 0x0800)
 
+local pf_ssrc           = ProtoField.new ("SSRC", "mcptt.ssrc", ftypes.UINT32, nil, base.HEX)
+
 local pf_debug          = ProtoField.uint16 ("mcptt.debug", "Debug", base.DEC)
 
 local pf_type_pc        = ProtoField.new ("Message type", "mcpc.type", ftypes.UINT8, type_codes_pc, base.DEC, 0x0F)
@@ -303,7 +306,8 @@ mcptt.fields = {
     pf_ind_emerg,
     pf_ind_immin,
     pf_msg_type,
-    pf_debug
+    pf_debug,
+    pf_ssrc
 }
 
 mcptt_pc.fields = {
@@ -598,7 +602,20 @@ function mcptt.dissector(tvbuf,pktinfo,root)
             while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
                 pos = pos +1
             end
+        elseif field_name == "SSRC" then 
+            dprint2("============SSRC")
+            -- Get the field length (8 bits)
+            local field_len = tvbuf:range(pos,1):uint()
+            pos = pos +1
 
+            -- Add the SSRC to the tree
+            tree:add(pf_ssrc, tvbuf:range(pos, field_len - 2))
+            pos = pos + field_len
+        else -- If the field ID is not recognized, consider it a SSRC of 4 bytes
+            dprint2("============SSRC")
+            -- Add the SSRC to the tree
+            tree:add(pf_ssrc, tvbuf:range(pos - 1, 4))
+            pos = pos + 3        
         end
 
         pktlen_remaining = pktlen - pos
