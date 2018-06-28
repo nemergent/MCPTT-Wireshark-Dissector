@@ -100,6 +100,7 @@ Click on:
 
 Then set the name to: MCVD
 and the text to: mcvideo_0 || mcvideo_1 || mcvideo_2
+
 Click ok to finish.
 
 To use the macro, type the following at the filter bar: ${MCVD}
