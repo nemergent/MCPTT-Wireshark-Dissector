@@ -91,3 +91,15 @@ Use the following switch at the command line:
 Specifying the used port for the MCPTT or any other filter that is suitable
 for you.
 
+### MCVideo specific tips
+
+To filter the three protocol names of MCVideo at the same time:
+
+Click on:
+- Analyze > Display Filter Macros > Add Filter (+ symbol)
+
+Then set the name to: MCVD
+and the text to: mcvideo_0 || mcvideo_1 || mcvideo_2
+Click ok to finish.
+
+To use the macro, type the following at the filter bar: ${MCVD}

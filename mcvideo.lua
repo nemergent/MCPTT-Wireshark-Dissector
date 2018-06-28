@@ -455,7 +455,7 @@ mcvideo_2.fields = {
 -- Local values for our use
 local type_0    = Field.new("mcvideo_0.type")
 local type_1    = Field.new("mcvideo_1.type")
---local type_2    = Field.new("mcvideo_2.type")
+local type_2    = Field.new("mcvideo_2.type")
 
 
 
