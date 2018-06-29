@@ -757,7 +757,7 @@ function mcvideo_0.dissector(tvbuf,pktinfo,root)
                 pos = pos +1
             end
 			
-		elseif field_name == "Recepction Priority" then
+		elseif field_name == "Reception Priority" then
             dprint2("============RX PRIO")
             -- Get the field length (8 bits)
             local field_len = tvbuf:range(pos,1):uint()
@@ -1066,7 +1066,7 @@ function mcvideo_1.dissector(tvbuf,pktinfo,root)
                 pos = pos +1
             end
 			
-		elseif field_name == "Recepction Priority" then
+		elseif field_name == "Reception Priority" then
             dprint2("============RX PRIO")
             -- Get the field length (8 bits)
             local field_len = tvbuf:range(pos,1):uint()
@@ -1374,7 +1374,7 @@ function mcvideo_2.dissector(tvbuf,pktinfo,root)
                 pos = pos +1
             end
 			
-		elseif field_name == "Recepction Priority" then
+		elseif field_name == "Reception Priority" then
             dprint2("============RX PRIO")
             -- Get the field length (8 bits)
             local field_len = tvbuf:range(pos,1):uint()
