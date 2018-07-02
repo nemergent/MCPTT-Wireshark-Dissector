@@ -279,7 +279,7 @@ local pf_ip_version     = ProtoField.new ("IP Version", "mcmc.ip_version", ftype
 local pf_floor_ctrl_port = ProtoField.new ("Floor Control Port", "mcmc.floor_ctrl_port", ftypes.UINT32)
 local pf_media_port     = ProtoField.new ("Media Port", "mcmc.media_port", ftypes.UINT32) 
 local pf_ipv4_addr      = ProtoField.new ("IPv4 Address", "mcmc.ipv4_address", ftypes.IPv4)
-local pf_ipv6_addr      = ProtoField.new ("IPv4 Address", "mcmc.ipv4_address", ftypes.IPv6)
+local pf_ipv6_addr      = ProtoField.new ("IPv6 Address", "mcmc.ipv6_address", ftypes.IPv6)
 	
 mcptt.fields = {
     pf_ackreq,
