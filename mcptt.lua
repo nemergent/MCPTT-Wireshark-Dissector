@@ -1,10 +1,11 @@
 ----------------------------------------
 -- script-name: mcptt.lua
 --
--- author: Iñigo Ruiz <iruizr7@gmail.com>
+-- authors: Iñigo Ruiz <iruizr7@gmail.com>
+-- Mikel Ramos (mikel.ramos@ehu.eus)
 
 --   MCPTT Wireshark Dissector
---   Copyright (C) 2016  Nemergent Initiative http://www.nemergent.com
+--   Copyright (C) 2018  Nemergent Initiative http://www.nemergent.com
 
 --   This program is free software: you can redistribute it and/or modify
 --   it under the terms of the GNU General Public License as published by
@@ -20,17 +21,17 @@
 --   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 --
--- Version: 1.0
+-- Version: 1.1
 --
 --
 -- OVERVIEW:
--- This script provides a dissector for the Mission Critical Push To Talk (MCPTT) defined by the 3GPP in the TS 23.179.
+-- This script provides a dissector for the Mission Critical Push To Talk (MCPTT) defined by the 3GPP in the TS 24.380.
 
 -- do not modify this table
 local debug_level = {
     DISABLED = 0,
-    LEVEL_1  = 1,
-    LEVEL_2  = 2
+    LEVEL_1 = 1,
+    LEVEL_2 = 2
 }
 
 -- set this DEBUG to debug_level.LEVEL_1 to enable printing debug_level info
@@ -42,7 +43,7 @@ local dprint2 = function() end
 local function reset_debug_level()
     if DEBUG > debug_level.DISABLED then
         dprint = function(...)
-            print(table.concat({"Lua:", ...}," "))
+            print(table.concat({ "Lua:", ... }, " "))
         end
 
         if DEBUG > debug_level.LEVEL_1 then
@@ -50,9 +51,11 @@ local function reset_debug_level()
         end
     end
 end
+
 -- call it now
 reset_debug_level()
 
+dprint("Nemergent MCPTT Wireshark dissector (Nemergent Initiative http://www.nemergent.com)")
 dprint2("Wireshark version = ", get_version())
 dprint2("Lua version = ", _VERSION)
 
@@ -60,8 +63,8 @@ dprint2("Lua version = ", _VERSION)
 assert(ProtoExpert.new, "Wireshark does not have the ProtoExpert class, so it's too old - get the latest 1.11.3 or higher")
 
 -- creates a Proto object, but doesn't register it yet
-local mcptt = Proto("mcptt","Mission Critical PTT Protocol Floor Control")
-local mcptt_pc = Proto("mcpc","Mission Critical PTT Protocol Pre-established session call control")
+local mcptt = Proto("mcptt", "Mission Critical PTT Protocol Floor Control")
+local mcptt_pc = Proto("mcpc", "Mission Critical PTT Protocol Pre-established session call control")
 local mcptt_cp = Proto("mcmc", "Mission Critical MBMS subchannel Control Protocol")
 
 ----------------------------------------
@@ -71,8 +74,8 @@ local mcptt_cp = Proto("mcmc", "Mission Critical MBMS subchannel Control Protoco
 local FIXED_HEADER_LEN = 12
 
 -- The smallest possible MCPTT field size
--- Has to be at least a field ID (8 bits), the value length (8 bits) and a NULL value.
-local MIN_FIELD_LEN = 2
+-- Has to be at least a field ID (8 bits), the value length (8 bits) and the padding up to the nearer multiple of 4.
+local MIN_FIELD_LEN = 4
 
 -- 3GPP TS 24.380 version 13.0.2 Release 13
 -- with 3GPP TS 24.380 version 13.3.0 Release 13 changes to field codes
@@ -214,17 +217,17 @@ local type_codes_cp = {
 -- with TS 24.380 version 13.3.0 Release 13 changes
 -- Table 8.4.3.1-2: MBMS subchannel control protocol specific fields
 local field_codes_cp = {
-	[0] = "Subchannel",
-	[1] = "TMGI",
-	[2] = "MCPTT Group ID",
-	[3] = "MCPTT Group ID"
+    [0] = "Subchannel",
+    [1] = "TMGI",
+    [2] = "MCPTT Group ID",
+    [3] = "MCPTT Group ID"
 }
 
 -- 3GPP TS 24.380 version 13.2.0 Release 13
 -- 8.4.3.3 MBMS Subchannel field
 local ip_version = {
-	[0] = "IP version 4",
-	[1] = "IP version 6"
+    [0] = "IP version 4",
+    [1] = "IP version 6"
 }
 
 local pf_type           = ProtoField.new ("Message type", "mcptt.type", ftypes.UINT8, type_codes, base.DEC, 0x0F)
@@ -277,10 +280,10 @@ local pf_audio_m_line   = ProtoField.new ("Audio m-line Number", "mcmc.audio_m_l
 local pf_floor_m_line   = ProtoField.new ("Floor m-line Number", "mcmc.floor_m_line", ftypes.UINT8, nil, base.DEC, 0x0F)
 local pf_ip_version     = ProtoField.new ("IP Version", "mcmc.ip_version", ftypes.UINT8, ip_version, base.DEC, 0xF0)
 local pf_floor_ctrl_port = ProtoField.new ("Floor Control Port", "mcmc.floor_ctrl_port", ftypes.UINT32)
-local pf_media_port     = ProtoField.new ("Media Port", "mcmc.media_port", ftypes.UINT32) 
+local pf_media_port     = ProtoField.new ("Media Port", "mcmc.media_port", ftypes.UINT32)
 local pf_ipv4_addr      = ProtoField.new ("IPv4 Address", "mcmc.ipv4_address", ftypes.IPv4)
 local pf_ipv6_addr      = ProtoField.new ("IPv6 Address", "mcmc.ipv6_address", ftypes.IPv6)
-	
+
 mcptt.fields = {
     pf_ackreq,
     pf_type,
@@ -328,23 +331,23 @@ mcptt_cp.fields = {
     pf_group_id_cp,
     pf_tmgi,
     pf_subchannel,
-	pf_audio_m_line,
-	pf_floor_m_line,
-	pf_ip_version,
-	pf_floor_ctrl_port,
-	pf_media_port,
-	pf_ipv4_addr,
-	pf_ipv6_addr
+    pf_audio_m_line,
+    pf_floor_m_line,
+    pf_ip_version,
+    pf_floor_ctrl_port,
+    pf_media_port,
+    pf_ipv4_addr,
+    pf_ipv6_addr
 }
 
 -- Expert info
 local ef_bad_field = ProtoExpert.new("mcptt.bad_field", "Field missing or malformed",
-                                     expert.group.MALFORMED, expert.severity.WARN)
+    expert.group.MALFORMED, expert.severity.WARN)
 local ef_bad_field_pc = ProtoExpert.new("mcptt_pc.bad_field", "Field missing or malformed",
-                                  expert.group.MALFORMED, expert.severity.WARN)
+    expert.group.MALFORMED, expert.severity.WARN)
 local ef_bad_field_cp = ProtoExpert.new("mcptt_cp.bad_field", "Field missing or malformed",
-                                  expert.group.MALFORMED, expert.severity.WARN)							  
-								  
+    expert.group.MALFORMED, expert.severity.WARN)
+
 
 mcptt.experts = {
     ef_bad_field
@@ -366,8 +369,30 @@ local grantedid = Field.new("mcptt.grantedid")
 local duration  = Field.new("mcptt.duration")
 local rejphrase = Field.new("mcptt.rejphrase")
 
+-- RTCP Padding check function
+function rtcp_padding(pos, tvbuf, pktlen, pktlen_remaining)
+    if pktlen_remaining < MIN_FIELD_LEN then
+        -- Check if RTCP padding was needed
+        if (pos) % 4 ~= 0 then
+            local padding_bytes = 4 - ((pos) % 4)
+            for i = 0, padding_bytes - 1, 1 do
+                if tvbuf:range(pos, 1):uint() == 0 then
+                    pos = pos + 1
+                end
+            end
+            pktlen_remaining = pktlen - pos
+            if pktlen_remaining == 0 then
+                return -1
+            else
+                return pos
+            end
+        else
+            return -2
+        end
+    end
+end
 
-function mcptt.dissector(tvbuf,pktinfo,root)
+function mcptt.dissector(tvbuf, pktinfo, root)
     dprint2("mcptt.dissector called")
 
     -- set the protocol column to show our protocol name
@@ -379,11 +404,11 @@ function mcptt.dissector(tvbuf,pktinfo,root)
     -- Add ourselves to the tree
     -- The second argument represent how much packet length this tree represents,
     -- we are taking the entire packet until the end.
-    local tree = root:add(mcptt, tvbuf:range(0,pktlen), "Mission Critical Push-to-talk: Floor control")
+    local tree = root:add(mcptt, tvbuf:range(0, pktlen), "Mission Critical Push-to-talk: Floor control")
 
     -- Add the MCPTT type and ACK req. to the sub-tree
-    tree:add(pf_ackreq, tvbuf:range(0,1))
-    tree:add(pf_type, tvbuf:range(0,1))
+    tree:add(pf_ackreq, tvbuf:range(0, 1))
+    tree:add(pf_type, tvbuf:range(0, 1))
 
     local pk_info = "MCPT " .. type_codes[type().value]
     pktinfo.cols.info = pk_info
@@ -394,85 +419,91 @@ function mcptt.dissector(tvbuf,pktinfo,root)
 
     while pktlen_remaining > 0 do
         dprint2("PKT remaining: ", pktlen_remaining)
-        if pktlen_remaining < MIN_FIELD_LEN then
+        local pad_calc = rtcp_padding(pos, tvbuf, pktlen, pktlen_remaining)
+        if pad_calc == -1 then
+            return
+        elseif pad_calc == -2 then
             tree:add_proto_expert_info(ef_bad_field)
             return
+        elseif pad_calc ~= nil and pad_calc > 0 then
+            pos = pad_calc
         end
 
+
         -- Get the Field ID (8 bits)
-        local field_id = tvbuf:range(pos,1)
+        local field_id = tvbuf:range(pos, 1)
         local field_name = field_codes[field_id:uint()]
-        pos = pos +1
+        pos = pos + 1
 
         dprint2(field_id:uint())
         dprint2("FIELD ID: ", field_name)
-        dprint2("POS: ", pos-1)
+        dprint2("POS: ", pos - 1)
 
         if field_name == "Floor Priority" then
             dprint2("============FLOOR PRIO")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):uint()
-            pos = pos +1
+            local field_len = tvbuf:range(pos, 1):uint()
+            pos = pos + 1
 
             -- Supposely fixed to 16 bits, and only used the first 8?
             -- Table 8.2.3.2-1: Floor Priority field coding
             -- Add the Floor priority to the tree
-            tree:add(pf_floorprio, tvbuf:range(pos,1))
+            tree:add(pf_floorprio, tvbuf:range(pos, 1))
 
             pos = pos + field_len
 
         elseif field_name == "Duration" then
             dprint2("============Duration")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):uint()
-            pos = pos +1
+            local field_len = tvbuf:range(pos, 1):uint()
+            pos = pos + 1
 
             -- Table 8.2.3.3-1: Duration field coding
             -- Add the Duration to the tree
-            tree:add(pf_duration, tvbuf:range(pos,field_len))
+            tree:add(pf_duration, tvbuf:range(pos, field_len))
             pos = pos + field_len
 
-            pk_info = pk_info .. " (for ".. duration().display .." s)"
+            pk_info = pk_info .. " (for " .. duration().display .. " s)"
             pktinfo.cols.info = pk_info
 
         elseif field_name == "Reject Cause" then
             dprint2("============Reject Cause")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):uint()
-            pos = pos +1
+            local field_len = tvbuf:range(pos, 1):uint()
+            pos = pos + 1
 
             -- Table 8.2.3.4-1: Reject Cause field coding
             -- Add the Reject Cause bits to the tree
             if type().value == 6 then
-                tree:add(pf_revoke_cause, tvbuf:range(pos,2))
+                tree:add(pf_revoke_cause, tvbuf:range(pos, 2))
             elseif type().value == 3 then
-                tree:add(pf_reject_cause, tvbuf:range(pos,2))
+                tree:add(pf_reject_cause, tvbuf:range(pos, 2))
             end
             pos = pos + 2
 
             if field_len > 2 then
                 -- Add the Reject Phrase to the tree
-                tree:add(pf_reject_phrase, tvbuf:range(pos,field_len-2))
-                pos = pos + field_len-2
+                tree:add(pf_reject_phrase, tvbuf:range(pos, field_len - 2))
+                pos = pos + field_len - 2
 
-                pk_info = pk_info .. " (".. rejphrase().display ..")"
+                pk_info = pk_info .. " (" .. rejphrase().display .. ")"
                 pktinfo.cols.info = pk_info
 
                 -- Consume the possible padding
-                while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                    pos = pos +1
+                while pos < pktlen and tvbuf:range(pos, 1):uint() == 0 do
+                    pos = pos + 1
                 end
             end
 
         elseif field_name == "Queue Info" then --TODO: Not Tested
             dprint2("============Queue Info")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):uint()
-            pos = pos +1
+            local field_len = tvbuf:range(pos, 1):uint()
+            pos = pos + 1
 
             -- Table 8.2.3.5-1: Queue Info field coding
             -- Add the Queue Info to the tree
-            local queue_pos = tvbuf:range(pos,1):uint()
+            local queue_pos = tvbuf:range(pos, 1):uint()
             if queue_pos == 65535 then
                 tree:add(pf_queue_unknown, "MCPTT Server did not disclose queue position")
             elseif queue_pos == 65534 then
@@ -480,133 +511,133 @@ function mcptt.dissector(tvbuf,pktinfo,root)
             else
                 tree:add(pf_queue_info, queue_pos)
             end
-            pos = pos +1
+            pos = pos + 1
 
             -- Add the Queue Priority to the tree
-            tree:add(pf_queue_prio, tvbuf:range(pos,1))
-            pos = pos +1
+            tree:add(pf_queue_prio, tvbuf:range(pos, 1))
+            pos = pos + 1
 
         elseif field_name == "Granted Party's Identity" then
             dprint2("============Granted Party's Identity")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):le_uint()
-            pos = pos +1
+            local field_len = tvbuf:range(pos, 1):le_uint()
+            pos = pos + 1
 
             -- Add the Granted Party's Identity to the tree
-            tree:add(pf_granted_id, tvbuf:range(pos,field_len))
+            tree:add(pf_granted_id, tvbuf:range(pos, field_len))
             pos = pos + field_len
 
-            pk_info = pk_info .. " (by ".. grantedid().display ..")"
+            pk_info = pk_info .. " (by " .. grantedid().display .. ")"
             pktinfo.cols.info = pk_info
 
             -- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
+            while pos < pktlen and tvbuf:range(pos, 1):uint() == 0 do
+                pos = pos + 1
             end
             dprint2("Padding until: ", pos)
 
         elseif field_name == "Permission to Request the Floor" then
             dprint2("============Permission to Request the Floor")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):uint()
-            pos = pos +1
+            local field_len = tvbuf:range(pos, 1):uint()
+            pos = pos + 1
 
             -- Add the Permission to Request the Floor to the tree
-            tree:add(pf_req_perm, tvbuf:range(pos,field_len))
+            tree:add(pf_req_perm, tvbuf:range(pos, field_len))
             pos = pos + field_len
 
         elseif field_name == "Queue Size" then --TODO: Not Tested
             dprint2("============Queue Size")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):uint()
-            pos = pos +1
+            local field_len = tvbuf:range(pos, 1):uint()
+            pos = pos + 1
 
             -- Add the Permission to Request the Floor to the tree
-            tree:add(pf_queue_size, tvbuf:range(pos,field_len))
+            tree:add(pf_queue_size, tvbuf:range(pos, field_len))
             pos = pos + field_len
 
         elseif field_name == "Queued User ID" then
             dprint2("============Queued User ID")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):le_uint()
-            pos = pos +1
+            local field_len = tvbuf:range(pos, 1):le_uint()
+            pos = pos + 1
 
             -- Add the Queued User ID to the tree
-            tree:add(pf_queued_id, tvbuf:range(pos,field_len))
+            tree:add(pf_queued_id, tvbuf:range(pos, field_len))
             pos = pos + field_len
 
             -- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
+            while pos < pktlen and tvbuf:range(pos, 1):uint() == 0 do
+                pos = pos + 1
             end
             dprint2("Padding until: ", pos)
 
         elseif field_name == "Message Sequence-Number" then --TODO: Not Tested
             dprint2("============Message Sequence-Number")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):uint()
-            pos = pos +1
+            local field_len = tvbuf:range(pos, 1):uint()
+            pos = pos + 1
 
             -- Add the Permission to Request the Floor to the tree
-            tree:add(pf_sequence, tvbuf:range(pos,field_len))
+            tree:add(pf_sequence, tvbuf:range(pos, field_len))
             pos = pos + field_len
 
         elseif field_name == "Source" then
             dprint2("============Source")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):uint()
-            pos = pos +1
+            local field_len = tvbuf:range(pos, 1):uint()
+            pos = pos + 1
 
             -- Add the Permission to Request the Floor to the tree
-            tree:add(pf_source, tvbuf:range(pos,field_len))
+            tree:add(pf_source, tvbuf:range(pos, field_len))
             pos = pos + field_len
 
         elseif field_name == "Message Type" then
             dprint2("============Message Type")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):uint()
-            pos = pos +1
+            local field_len = tvbuf:range(pos, 1):uint()
+            pos = pos + 1
 
             -- Add the Permission to Request the Floor to the tree
-            tree:add(pf_msg_type, tvbuf:range(pos,field_len))
+            tree:add(pf_msg_type, tvbuf:range(pos, field_len))
             pos = pos + field_len
 
         elseif field_name == "Floor Indicator" then
             dprint2("============Floor Indicator")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):uint()
-            pos = pos +1
+            local field_len = tvbuf:range(pos, 1):uint()
+            pos = pos + 1
 
             -- Create a new subtree for the Indicators
-            local ind_tree = tree:add(pf_indicators, tvbuf:range(pos,field_len))
+            local ind_tree = tree:add(pf_indicators, tvbuf:range(pos, field_len))
 
             -- Add the Floor Indicator to the tree
-            ind_tree:add(pf_ind_normal, tvbuf:range(pos,field_len))
-            ind_tree:add(pf_ind_broad, tvbuf:range(pos,field_len))
-            ind_tree:add(pf_ind_sys, tvbuf:range(pos,field_len))
-            ind_tree:add(pf_ind_emerg, tvbuf:range(pos,field_len))
-            ind_tree:add(pf_ind_immin, tvbuf:range(pos,field_len))
+            ind_tree:add(pf_ind_normal, tvbuf:range(pos, field_len))
+            ind_tree:add(pf_ind_broad, tvbuf:range(pos, field_len))
+            ind_tree:add(pf_ind_sys, tvbuf:range(pos, field_len))
+            ind_tree:add(pf_ind_emerg, tvbuf:range(pos, field_len))
+            ind_tree:add(pf_ind_immin, tvbuf:range(pos, field_len))
             pos = pos + field_len
 
         elseif field_name == "User ID" then --TODO: Not Tested
             dprint2("============User ID")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):le_uint()
-            pos = pos +1
+            local field_len = tvbuf:range(pos, 1):le_uint()
+            pos = pos + 1
 
             -- Add the User ID to the tree
-            tree:add(pf_user_id, tvbuf:range(pos,field_len))
+            tree:add(pf_user_id, tvbuf:range(pos, field_len))
             pos = pos + field_len
 
             -- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
+            while pos < pktlen and tvbuf:range(pos, 1):uint() == 0 do
+                pos = pos + 1
             end
-        elseif field_name == "SSRC" then 
+        elseif field_name == "SSRC" then
             dprint2("============SSRC")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):uint()
-            pos = pos +1
+            local field_len = tvbuf:range(pos, 1):uint()
+            pos = pos + 1
 
             -- Add the SSRC to the tree
             tree:add(pf_ssrc, tvbuf:range(pos, field_len - 2))
@@ -615,21 +646,20 @@ function mcptt.dissector(tvbuf,pktinfo,root)
             dprint2("============SSRC")
             -- Add the SSRC to the tree
             tree:add(pf_ssrc, tvbuf:range(pos - 1, 4))
-            pos = pos + 3        
+            pos = pos + 3
         end
 
         pktlen_remaining = pktlen - pos
-
     end
 
 
-    dprint2("mcptt.dissector returning",pos)
+    dprint2("mcptt.dissector returning", pos)
 
     -- tell wireshark how much of tvbuff we dissected
     return pos
 end
 
-function mcptt_pc.dissector(tvbuf,pktinfo,root)
+function mcptt_pc.dissector(tvbuf, pktinfo, root)
     dprint2("mcptt_pc.dissector called")
 
     -- set the protocol column to show our protocol name
@@ -641,11 +671,11 @@ function mcptt_pc.dissector(tvbuf,pktinfo,root)
     -- Add ourselves to the tree
     -- The second argument represent how much packet length this tree represents,
     -- we are taking the entire packet until the end.
-    local tree = root:add(mcptt_pc, tvbuf:range(0,pktlen), "Mission Critical Push-to-talk: Pre-established session call control")
+    local tree = root:add(mcptt_pc, tvbuf:range(0, pktlen), "Mission Critical Push-to-talk: Pre-established session call control")
 
     -- Add the MCPTT type and ACK req. to the sub-tree
-    tree:add(pf_ackreq, tvbuf:range(0,1))
-    tree:add(pf_type_pc, tvbuf:range(0,1))
+    tree:add(pf_ackreq, tvbuf:range(0, 1))
+    tree:add(pf_type_pc, tvbuf:range(0, 1))
 
     dprint2("MESSAGE TYPE:", type_pc().value)
     local pk_info = "MCPC " .. type_codes_pc[type_pc().value]
@@ -663,38 +693,38 @@ function mcptt_pc.dissector(tvbuf,pktinfo,root)
         end
 
         -- Get the Field ID (8 bits)
-        local field_id = tvbuf:range(pos,1)
+        local field_id = tvbuf:range(pos, 1)
         local field_name = field_codes_pc[field_id:uint()]
-        pos = pos +1
+        pos = pos + 1
 
         dprint2(field_id:uint())
         dprint2("FIELD ID: ", field_name)
-        dprint2("POS: ", pos-1)
+        dprint2("POS: ", pos - 1)
 
         if field_name == "Media Streams" then
             dprint2("============Media Streams")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):uint()
-            pos = pos +1
+            local field_len = tvbuf:range(pos, 1):uint()
+            pos = pos + 1
 
-            tree:add(pf_media_stream, tvbuf:range(pos,1))
-            pos = pos +1
+            tree:add(pf_media_stream, tvbuf:range(pos, 1))
+            pos = pos + 1
 
-            tree:add(pf_control_channel, tvbuf:range(pos,1))
-            pos = pos +1
+            tree:add(pf_control_channel, tvbuf:range(pos, 1))
+            pos = pos + 1
 
 
         elseif field_name == "MCPTT Session Identity" then
             dprint2("============MCPTT Session Identity")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):uint()
-            pos = pos +1
+            local field_len = tvbuf:range(pos, 1):uint()
+            pos = pos + 1
 
             -- Add the MCPTT Session Type to the tree
-            tree:add(pf_sess_type, tvbuf:range(pos,1))
+            tree:add(pf_sess_type, tvbuf:range(pos, 1))
 
             -- Add the MCPTT Session Identity to the tree
-            tree:add(pf_sess_identity, tvbuf:range(pos+1,field_len-1))
+            tree:add(pf_sess_identity, tvbuf:range(pos + 1, field_len - 1))
             pos = pos + field_len
 
             -- Consume the possible padding
@@ -702,94 +732,92 @@ function mcptt_pc.dissector(tvbuf,pktinfo,root)
                 local padding_bytes = 4 - ((2 + field_len) % 4)
                 pos = pos + padding_bytes
             end
-            
+
             dprint2("Padding until: ", pos)
 
         elseif field_name == "Warning Text" then
             dprint2("============Warning Text")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):le_uint()
-            pos = pos +1
+            local field_len = tvbuf:range(pos, 1):le_uint()
+            pos = pos + 1
 
             -- Add the Warning Text to the tree
-            tree:add(pf_warn_text, tvbuf:range(pos,field_len))
+            tree:add(pf_warn_text, tvbuf:range(pos, field_len))
             pos = pos + field_len
 
             -- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
+            while pos < pktlen and tvbuf:range(pos, 1):uint() == 0 do
+                pos = pos + 1
             end
             dprint2("Padding until: ", pos)
 
         elseif field_name == "MCPTT Group Identity" then
             dprint2("============MCPTT Group Identity")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):le_uint()
-            pos = pos +1
+            local field_len = tvbuf:range(pos, 1):le_uint()
+            pos = pos + 1
 
             -- Add the MCPTT Group Identity to the tree
-            tree:add(pf_group_id, tvbuf:range(pos,field_len))
+            tree:add(pf_group_id, tvbuf:range(pos, field_len))
             pos = pos + field_len
 
             -- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
+            while pos < pktlen and tvbuf:range(pos, 1):uint() == 0 do
+                pos = pos + 1
             end
             dprint2("Padding until: ", pos)
 
         elseif field_name == "Answer State" then --TODO: Not Tested
             dprint2("============Answer State")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):uint()
-            pos = pos +1
+            local field_len = tvbuf:range(pos, 1):uint()
+            pos = pos + 1
 
             -- Add the Answer State to the tree
-            tree:add(pf_answ_state, tvbuf:range(pos,field_len))
+            tree:add(pf_answ_state, tvbuf:range(pos, field_len))
             pos = pos + field_len
 
         elseif field_name == "Inviting MCPTT User Identity" then
             dprint2("============Inviting MCPTT User Identity")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):le_uint()
-            pos = pos +1
+            local field_len = tvbuf:range(pos, 1):le_uint()
+            pos = pos + 1
 
             -- Add the Inviting MCPTT User Identity to the tree
-            tree:add(pf_inv_user_id, tvbuf:range(pos,field_len))
+            tree:add(pf_inv_user_id, tvbuf:range(pos, field_len))
             pos = pos + field_len
 
             -- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
+            while pos < pktlen and tvbuf:range(pos, 1):uint() == 0 do
+                pos = pos + 1
             end
             dprint2("Padding until: ", pos)
 
         elseif field_name == "Reason Code" then --TODO: Not Tested
             dprint2("============Reason Code")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):uint()
-            pos = pos +1
+            local field_len = tvbuf:range(pos, 1):uint()
+            pos = pos + 1
 
             -- Add the Reason Code to the tree
-            tree:add(pf_reason_code, tvbuf:range(pos,field_len))
+            tree:add(pf_reason_code, tvbuf:range(pos, field_len))
             pos = pos + field_len
-
         end
 
         pktlen_remaining = pktlen - pos
-
     end
 
 
-    dprint2("mcpc.dissector returning",pos)
+    dprint2("mcpc.dissector returning", pos)
 
     -- tell wireshark how much of tvbuff we dissected
     return pos
 end
 
-function mcptt_cp.dissector(tvbuf,pktinfo,root)
-	dprint2("mcptt_cp.dissector called")
-	
-	-- set the protocol column to show our protocol name
+function mcptt_cp.dissector(tvbuf, pktinfo, root)
+    dprint2("mcptt_cp.dissector called")
+
+    -- set the protocol column to show our protocol name
     pktinfo.cols.protocol:set("MCMC")
 
     -- Save the packet length
@@ -798,10 +826,10 @@ function mcptt_cp.dissector(tvbuf,pktinfo,root)
     -- Add ourselves to the tree
     -- The second argument represent how much packet length this tree represents,
     -- we are taking the entire packet until the end.
-    local tree = root:add(mcptt_cp, tvbuf:range(0,pktlen), "Mission Critical MBMS subchannel Control Protocol")
+    local tree = root:add(mcptt_cp, tvbuf:range(0, pktlen), "Mission Critical MBMS subchannel Control Protocol")
 
     -- Add the MCPTT type and ACK req. to the sub-tree
-    tree:add(pf_type_cp, tvbuf:range(0,1))
+    tree:add(pf_type_cp, tvbuf:range(0, 1))
 
     dprint2("MESSAGE TYPE:", type_cp().value)
     local pk_info = "MCMC " .. type_codes_cp[type_cp().value]
@@ -810,8 +838,8 @@ function mcptt_cp.dissector(tvbuf,pktinfo,root)
     -- We have parsed all the fixed order header
     local pos = FIXED_HEADER_LEN
     local pktlen_remaining = pktlen - pos
-	
-	while pktlen_remaining > 0 do
+
+    while pktlen_remaining > 0 do
         dprint2("PKT remaining: ", pktlen_remaining)
         if pktlen_remaining < MIN_FIELD_LEN then
             tree:add_proto_expert_info(ef_bad_field_cp)
@@ -819,85 +847,83 @@ function mcptt_cp.dissector(tvbuf,pktinfo,root)
         end
 
         -- Get the Field ID (8 bits)
-        local field_id = tvbuf:range(pos,1)
+        local field_id = tvbuf:range(pos, 1)
         local field_name = field_codes_cp[field_id:uint()]
-        pos = pos +1
+        pos = pos + 1
 
         dprint2(field_id:uint())
         dprint2("FIELD ID: ", field_name)
-        dprint2("POS: ", pos-1)
+        dprint2("POS: ", pos - 1)
 
         if field_name == "MCPTT Group ID" then
             dprint2("============MCPTT Group ID")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):le_uint()
-            pos = pos +1
+            local field_len = tvbuf:range(pos, 1):le_uint()
+            pos = pos + 1
 
             -- Add the MCPTT Group Identity to the tree
-            tree:add(pf_group_id_cp, tvbuf:range(pos,field_len))
+            tree:add(pf_group_id_cp, tvbuf:range(pos, field_len))
             pos = pos + field_len
 
             -- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
+            while pos < pktlen and tvbuf:range(pos, 1):uint() == 0 do
+                pos = pos + 1
             end
             dprint2("Padding until: ", pos)
 
-        elseif field_name == "TMGI" then 
+        elseif field_name == "TMGI" then
             dprint2("============TMGI")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):le_uint()
-            pos = pos +1
+            local field_len = tvbuf:range(pos, 1):le_uint()
+            pos = pos + 1
 
             -- Add the TMGI to the tree
-            tree:add(pf_tmgi, tvbuf:range(pos,field_len))
+            tree:add(pf_tmgi, tvbuf:range(pos, field_len))
             pos = pos + field_len
-			
-            dprint2("Padding until: ", pos)			
+
+            dprint2("Padding until: ", pos)
 
         elseif field_name == "Subchannel" then
             dprint2("============Subchannel")
             -- Get the field length (8 bits)
-            local field_len = tvbuf:range(pos,1):le_uint()
-            pos = pos +1
+            local field_len = tvbuf:range(pos, 1):le_uint()
+            pos = pos + 1
 
             -- Add the MBMS Subchannel to the tree
             -- Create a new subtree for the MBMS Subchannel
-            local subch_tree = tree:add(pf_subchannel, tvbuf:range(pos,field_len))
-			
-			subch_tree:add(pf_audio_m_line, tvbuf:range(pos, 1))
-			subch_tree:add(pf_floor_m_line, tvbuf:range(pos, 1))
-			local floor_line = bit.band(tvbuf:range(pos, 1):int(), 0x000F)
-			pos = pos +1
-			subch_tree:add(pf_ip_version, tvbuf:range(pos, 1))
-			local loc_ip_version = bit.rshift(tvbuf:range(pos, 1):int(), 4)
-			local loc_ip_version_name = ip_version[loc_ip_version]
-			pos = pos +1
-			if floor_line ~= 0 then
-				subch_tree:add(pf_floor_ctrl_port, tvbuf:range(pos, 4))
-				pos = pos +4
-			end
-			subch_tree:add(pf_media_port, tvbuf:range(pos, 4))
-			pos = pos +4
-			if loc_ip_version_name == "IP version 4" then
-              subch_tree:add(pf_ipv4_addr, tvbuf:range(pos, 4))
-			  pos = pos +4
-			elseif loc_ip_version_name == "IP version 6" then
-			  subch_tree:add(pf_ipv6_addr, tvbuf:range(pos, 16))
-			  pos = pos +16
-			end
-            
+            local subch_tree = tree:add(pf_subchannel, tvbuf:range(pos, field_len))
+
+            subch_tree:add(pf_audio_m_line, tvbuf:range(pos, 1))
+            subch_tree:add(pf_floor_m_line, tvbuf:range(pos, 1))
+            local floor_line = bit.band(tvbuf:range(pos, 1):int(), 0x000F)
+            pos = pos + 1
+            subch_tree:add(pf_ip_version, tvbuf:range(pos, 1))
+            local loc_ip_version = bit.rshift(tvbuf:range(pos, 1):int(), 4)
+            local loc_ip_version_name = ip_version[loc_ip_version]
+            pos = pos + 1
+            if floor_line ~= 0 then
+                subch_tree:add(pf_floor_ctrl_port, tvbuf:range(pos, 4))
+                pos = pos + 4
+            end
+            subch_tree:add(pf_media_port, tvbuf:range(pos, 4))
+            pos = pos + 4
+            if loc_ip_version_name == "IP version 4" then
+                subch_tree:add(pf_ipv4_addr, tvbuf:range(pos, 4))
+                pos = pos + 4
+            elseif loc_ip_version_name == "IP version 6" then
+                subch_tree:add(pf_ipv6_addr, tvbuf:range(pos, 16))
+                pos = pos + 16
+            end
         end
 
         pktlen_remaining = pktlen - pos
-
     end
 
-	
 
-    dprint2("mcmc.dissector returning",pos)
-	
-	-- tell wireshark how much of tvbuff we dissected
+
+    dprint2("mcmc.dissector returning", pos)
+
+    -- tell wireshark how much of tvbuff we dissected
     return pos
 end
 
