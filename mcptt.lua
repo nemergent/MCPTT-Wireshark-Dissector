@@ -392,6 +392,19 @@ function rtcp_padding(pos, tvbuf, pktlen, pktlen_remaining)
     end
 end
 
+function field_padding(pos, field_start, minus)
+    local field_length = pos - field_start
+    dprint2("[PAD] Field length: ", field_length)
+    local pad_length = field_length - minus
+    if pad_length % 4 ~= 0 then
+        local padding_bytes = 4 - ((pos) % 4)
+        dprint2("[PAD] Padding needed: ", padding_bytes)
+        return padding_bytes
+    else
+        return 0
+    end
+end
+
 function mcptt.dissector(tvbuf, pktinfo, root)
     dprint2("mcptt.dissector called")
 
@@ -483,6 +496,7 @@ function mcptt.dissector(tvbuf, pktinfo, root)
 
             if field_len > 2 then
                 -- Add the Reject Phrase to the tree
+                local field_start = pos
                 tree:add(pf_reject_phrase, tvbuf:range(pos, field_len - 2))
                 pos = pos + field_len - 2
 
@@ -490,9 +504,7 @@ function mcptt.dissector(tvbuf, pktinfo, root)
                 pktinfo.cols.info = pk_info
 
                 -- Consume the possible padding
-                while pos < pktlen and tvbuf:range(pos, 1):uint() == 0 do
-                    pos = pos + 1
-                end
+                pos = pos + field_padding(pos, field_start, 0)
             end
 
         elseif field_name == "Queue Info" then --TODO: Not Tested
@@ -524,6 +536,7 @@ function mcptt.dissector(tvbuf, pktinfo, root)
             pos = pos + 1
 
             -- Add the Granted Party's Identity to the tree
+            local field_start = pos
             tree:add(pf_granted_id, tvbuf:range(pos, field_len))
             pos = pos + field_len
 
@@ -531,10 +544,7 @@ function mcptt.dissector(tvbuf, pktinfo, root)
             pktinfo.cols.info = pk_info
 
             -- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos, 1):uint() == 0 do
-                pos = pos + 1
-            end
-            dprint2("Padding until: ", pos)
+            pos = pos + field_padding(pos, field_start, 2)
 
         elseif field_name == "Permission to Request the Floor" then
             dprint2("============Permission to Request the Floor")
@@ -563,14 +573,12 @@ function mcptt.dissector(tvbuf, pktinfo, root)
             pos = pos + 1
 
             -- Add the Queued User ID to the tree
+            local field_start = pos
             tree:add(pf_queued_id, tvbuf:range(pos, field_len))
             pos = pos + field_len
 
             -- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos, 1):uint() == 0 do
-                pos = pos + 1
-            end
-            dprint2("Padding until: ", pos)
+            pos = pos + field_padding(pos, field_start, 2)
 
         elseif field_name == "Message Sequence-Number" then --TODO: Not Tested
             dprint2("============Message Sequence-Number")
@@ -619,20 +627,19 @@ function mcptt.dissector(tvbuf, pktinfo, root)
             ind_tree:add(pf_ind_immin, tvbuf:range(pos, field_len))
             pos = pos + field_len
 
-        elseif field_name == "User ID" then --TODO: Not Tested
+        elseif field_name == "User ID" then
             dprint2("============User ID")
             -- Get the field length (8 bits)
             local field_len = tvbuf:range(pos, 1):le_uint()
             pos = pos + 1
+            local field_start = pos
 
             -- Add the User ID to the tree
             tree:add(pf_user_id, tvbuf:range(pos, field_len))
             pos = pos + field_len
 
             -- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos, 1):uint() == 0 do
-                pos = pos + 1
-            end
+            pos = pos + field_padding(pos, field_start, 2)
         elseif field_name == "SSRC" then
             dprint2("============SSRC")
             -- Get the field length (8 bits)
@@ -727,18 +734,15 @@ function mcptt_pc.dissector(tvbuf, pktinfo, root)
 
             -- Add the MCPTT Session Type to the tree
             tree:add(pf_sess_type, tvbuf:range(pos, 1))
+            pos = pos + 1
 
             -- Add the MCPTT Session Identity to the tree
-            tree:add(pf_sess_identity, tvbuf:range(pos + 1, field_len - 1))
-            pos = pos + field_len
+            local field_start = pos
+            tree:add(pf_sess_identity, tvbuf:range(pos, field_len - 1))
+            pos = pos + field_len - 1
 
             -- Consume the possible padding
-            if (2 + field_len) % 4 ~= 0 then
-                local padding_bytes = 4 - ((2 + field_len) % 4)
-                pos = pos + padding_bytes
-            end
-
-            dprint2("Padding until: ", pos)
+            pos = pos + field_padding(pos, field_start, 1)
 
         elseif field_name == "Warning Text" then
             dprint2("============Warning Text")
@@ -747,14 +751,12 @@ function mcptt_pc.dissector(tvbuf, pktinfo, root)
             pos = pos + 1
 
             -- Add the Warning Text to the tree
+            local field_start = pos
             tree:add(pf_warn_text, tvbuf:range(pos, field_len))
             pos = pos + field_len
 
             -- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos, 1):uint() == 0 do
-                pos = pos + 1
-            end
-            dprint2("Padding until: ", pos)
+            pos = pos + field_padding(pos, field_start, 2)
 
         elseif field_name == "MCPTT Group Identity" then
             dprint2("============MCPTT Group Identity")
@@ -763,14 +765,12 @@ function mcptt_pc.dissector(tvbuf, pktinfo, root)
             pos = pos + 1
 
             -- Add the MCPTT Group Identity to the tree
+            local field_start = pos
             tree:add(pf_group_id, tvbuf:range(pos, field_len))
             pos = pos + field_len
 
             -- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos, 1):uint() == 0 do
-                pos = pos + 1
-            end
-            dprint2("Padding until: ", pos)
+            pos = pos + field_padding(pos, field_start, 2)
 
         elseif field_name == "Answer State" then --TODO: Not Tested
             dprint2("============Answer State")
@@ -789,14 +789,12 @@ function mcptt_pc.dissector(tvbuf, pktinfo, root)
             pos = pos + 1
 
             -- Add the Inviting MCPTT User Identity to the tree
+            local field_start = pos
             tree:add(pf_inv_user_id, tvbuf:range(pos, field_len))
             pos = pos + field_len
 
             -- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos, 1):uint() == 0 do
-                pos = pos + 1
-            end
-            dprint2("Padding until: ", pos)
+            pos = pos + field_padding(pos, field_start, 2)
 
         elseif field_name == "Reason Code" then --TODO: Not Tested
             dprint2("============Reason Code")
@@ -872,14 +870,12 @@ function mcptt_cp.dissector(tvbuf, pktinfo, root)
             pos = pos + 1
 
             -- Add the MCPTT Group Identity to the tree
+            local field_start = pos
             tree:add(pf_group_id_cp, tvbuf:range(pos, field_len))
             pos = pos + field_len
 
             -- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos, 1):uint() == 0 do
-                pos = pos + 1
-            end
-            dprint2("Padding until: ", pos)
+            pos = pos + field_padding(pos, field_start, 2)
 
         elseif field_name == "TMGI" then
             dprint2("============TMGI")
