@@ -435,8 +435,8 @@ function mcptt.dissector(tvbuf, pktinfo, root)
         local field_name = field_codes[field_id:uint()]
         pos = pos + 1
 
-        dprint2(field_id:uint())
-        dprint2("FIELD ID: ", field_name)
+        dprint2("Field binary id: ", field_id:uint())
+        dprint2("FIELD name: ", field_name)
         dprint2("POS: ", pos - 1)
 
         if field_name == "Floor Priority" then
@@ -697,8 +697,8 @@ function mcptt_pc.dissector(tvbuf, pktinfo, root)
         local field_name = field_codes_pc[field_id:uint()]
         pos = pos + 1
 
-        dprint2(field_id:uint())
-        dprint2("FIELD ID: ", field_name)
+        dprint2("Field binary id: ", field_id:uint())
+        dprint2("FIELD name: ", field_name)
         dprint2("POS: ", pos - 1)
 
         if field_name == "Media Streams" then
@@ -851,8 +851,8 @@ function mcptt_cp.dissector(tvbuf, pktinfo, root)
         local field_name = field_codes_cp[field_id:uint()]
         pos = pos + 1
 
-        dprint2(field_id:uint())
-        dprint2("FIELD ID: ", field_name)
+        dprint2("Field binary id: ", field_id:uint())
+        dprint2("FIELD name: ", field_name)
         dprint2("POS: ", pos - 1)
 
         if field_name == "MCPTT Group ID" then
