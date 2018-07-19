@@ -92,18 +92,6 @@ local field_codes = {
 	[19] = "Reception Priority",	
 }
 
--- 3GPP TS 24.380 version 13.0.2 Release 13
--- Table 8.3.3.1-2: Pre-established session call control fields
-local field_codes_pc = {
-    [0] = "Media Streams",
-    [1] = "MCPTT Session Identity",
-    [2] = "Warning Text",
-    [3] = "MCPTT Group Identity",
-    [4] = "Answer State",
-    [5] = "Inviting MCPTT User Identity",
-    [6] = "Reason Code"
-}
-
 -- 3GPP TS 24.581 version 15 Release 15
 -- Table 9.2.2.1-1: Transmission control specific messages sent by the transmission participant
 local type_codes_0 = {
@@ -146,13 +134,6 @@ local type_codes_2 = {
     [3] = "Media reception end response",
     [4] = "Transmission control ack"
 }
--- 3GPP TS 24.380 version 13.0.2 Release 13
--- Table 8.3.2-1: Pre-established session call control specific messages
-local type_codes_pc = {
-    [0] = "Connect",
-    [1] = "Disconnect",
-    [2] = "Acknowledgement"
-}
 
 local ack_code = {
     [0] = "ACK not required",
@@ -178,65 +159,6 @@ local reject_cause = {
     [255] = "Other reason"
 }
 
--- 9.2.10.2	Transmission revoked cause codes and revoked cause phrases
-local revoke_cause = {
-    [1] = "Only one MCVideo client",
-    [2] = "Media burst too long",
-    [3] = "No permission to send a Media Burst",
-    [4] = "Media Burst pre-empted",
-	[5] = "Terminate the RTP stream",
-    [6] = "No resources available",
-	[7] = "Queue the transmission",
-    [255] = "Other reason"
-}
-
--- 3GPP TS 24.380 version 13.0.2 Release 13
--- 8.3.3.3 MCVIDEO Session Identity field
-local session_type = {
-    [0] = "No type",
-    [1] = "Private",
-    [3] = "Prearranged",
-    [4] = "Chat"
-}
-
--- 3GPP TS 24.380 version 13.0.2 Release 13
--- 8.3.3.6 Answer State field
-local answer_state = {
-    [0] = "Unconfirmed",
-    [1] = "Confirmed"
-}
-
--- 3GPP TS 24.380 version 13.0.2 Release 13
--- 8.3.3.8 Reason Code field
-local reason_code = {
-    [0] = "Accepted",
-    [1] = "Busy",
-    [2] = "Not Accepted"
-}
-
--- 3GPP TS 24.380 version 13.2.0 Release 13
--- Table 8.4.2-1: MBMS subchannel control protocol messages
-local type_codes_cp = {
-    [0] = "Map Group To Bearer",
-    [1] = "Unmap Group To Bearer"
-}
-
--- 3GPP TS 24.380 version 13.2.0 Release 13
--- with TS 24.380 version 13.3.0 Release 13 changes
--- Table 8.4.3.1-2: MBMS subchannel control protocol specific fields
-local field_codes_cp = {
-	[0] = "Subchannel",
-	[1] = "TMGI",
-	[2] = "MCPTT Group ID",
-	[3] = "MCPTT Group ID"
-}
-
--- 3GPP TS 24.380 version 13.2.0 Release 13
--- 8.4.3.3 MBMS Subchannel field
-local ip_version = {
-	[0] = "IP version 4",
-	[1] = "IP version 6"
-}
 -- MCVIDEO_0
 local pf_type_0			= ProtoField.new ("Message type", "mcvideo_0.type", ftypes.UINT8, type_codes_0, base.DEC, 0x0F)
 local pf_ackreq_0       = ProtoField.new ("ACK Requirement", "mcvideo_0.ackreq", ftypes.UINT8, ack_code, base.DEC, 0x10)
