@@ -687,9 +687,14 @@ function mcptt_pc.dissector(tvbuf, pktinfo, root)
 
     while pktlen_remaining > 0 do
         dprint2("PKT remaining: ", pktlen_remaining)
-        if pktlen_remaining < MIN_FIELD_LEN then
-            tree:add_proto_expert_info(ef_bad_field_pc)
+        local pad_calc = rtcp_padding(pos, tvbuf, pktlen, pktlen_remaining)
+        if pad_calc == -1 then
             return
+        elseif pad_calc == -2 then
+            tree:add_proto_expert_info(ef_bad_field)
+            return
+        elseif pad_calc ~= nil and pad_calc > 0 then
+            pos = pad_calc
         end
 
         -- Get the Field ID (8 bits)
@@ -841,9 +846,14 @@ function mcptt_cp.dissector(tvbuf, pktinfo, root)
 
     while pktlen_remaining > 0 do
         dprint2("PKT remaining: ", pktlen_remaining)
-        if pktlen_remaining < MIN_FIELD_LEN then
-            tree:add_proto_expert_info(ef_bad_field_cp)
+        local pad_calc = rtcp_padding(pos, tvbuf, pktlen, pktlen_remaining)
+        if pad_calc == -1 then
             return
+        elseif pad_calc == -2 then
+            tree:add_proto_expert_info(ef_bad_field)
+            return
+        elseif pad_calc ~= nil and pad_calc > 0 then
+            pos = pad_calc
         end
 
         -- Get the Field ID (8 bits)
