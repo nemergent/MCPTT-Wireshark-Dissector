@@ -491,9 +491,14 @@ function mcvideo_0.dissector(tvbuf,pktinfo,root)
 
     while pktlen_remaining > 0 do
         dprint2("PKT remaining: ", pktlen_remaining)
-        if pktlen_remaining < MIN_FIELD_LEN then
+        local pad_calc = rtcp_padding(pos, tvbuf, pktlen, pktlen_remaining)
+        if pad_calc == -1 then
+            return
+        elseif pad_calc == -2 then
             tree:add_proto_expert_info(ef_bad_field)
             return
+        elseif pad_calc ~= nil and pad_calc > 0 then
+            pos = pad_calc
         end
 
         -- Get the Field ID (8 bits)
@@ -549,6 +554,7 @@ function mcvideo_0.dissector(tvbuf,pktinfo,root)
 
             if field_len > 2 then
                 -- Add the Reject Phrase to the tree
+                local field_start = pos
                 tree:add(pf_reject_phrase_0, tvbuf:range(pos,field_len-2))
                 pos = pos + field_len-2
 
@@ -556,9 +562,7 @@ function mcvideo_0.dissector(tvbuf,pktinfo,root)
                 pktinfo.cols.info = pk_info
 
                 -- Consume the possible padding
-                while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                    pos = pos +1
-                end
+                pos = pos + field_padding(pos, field_start, 0)
             end
 
         elseif field_name == "Queue Info" then --TODO: Not Tested
@@ -590,6 +594,7 @@ function mcvideo_0.dissector(tvbuf,pktinfo,root)
             pos = pos +1
 
             -- Add the Granted Party's Identity to the tree
+            local field_start = pos
             tree:add(pf_granted_id_0, tvbuf:range(pos,field_len))
             pos = pos + field_len
 
@@ -597,10 +602,7 @@ function mcvideo_0.dissector(tvbuf,pktinfo,root)
             pktinfo.cols.info = pk_info
 
             -- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
-            end
-            dprint2("Padding until: ", pos)
+            pos = pos + field_padding(pos, field_start, 2)
 
         elseif field_name == "Permission to Request the Transmission" then
             dprint2("============Permission to Request the Transmission")
@@ -629,14 +631,12 @@ function mcvideo_0.dissector(tvbuf,pktinfo,root)
             pos = pos +1
 
             -- Add the Queued User ID to the tree
+            local field_start = pos
             tree:add(pf_queued_id_0, tvbuf:range(pos,field_len))
             pos = pos + field_len
 
             -- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
-            end
-            dprint2("Padding until: ", pos)
+            pos = pos + field_padding(pos, field_start, 2)
 
         elseif field_name == "Message Sequence-Number" then --TODO: Not Tested
             dprint2("============Message Sequence-Number")
@@ -685,22 +685,19 @@ function mcvideo_0.dissector(tvbuf,pktinfo,root)
             ind_tree:add(pf_ind_immin_0, tvbuf:range(pos,field_len))
             pos = pos + field_len
 
-        elseif field_name == "User ID" then --TODO: Not Tested
+        elseif field_name == "User ID" then
             dprint2("============User ID")
             -- Get the field length (8 bits)
             local field_len = tvbuf:range(pos,1):le_uint()
             pos = pos +1
 
             -- Add the User ID to the tree
+            local field_start = pos
             tree:add(pf_user_id_0, tvbuf:range(pos,field_len))
             pos = pos + field_len
 
             -- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
-            end
-
-        
+            pos = pos + field_padding(pos, field_start, 2)
 		
 		elseif field_name == "SSRC" then
 			dprint2("============SSRC")
@@ -711,12 +708,6 @@ function mcvideo_0.dissector(tvbuf,pktinfo,root)
 			-- Add the SSRC to the tree (only 32 bits, the other 16 are spare) 
 			tree:add(pf_ssrc_0, tvbuf:range(pos,4))
             pos = pos + field_len
-			
-			-- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
-            end
-		
 		
 		elseif field_name == "Result" then
 			dprint2("============Result")
@@ -727,11 +718,6 @@ function mcvideo_0.dissector(tvbuf,pktinfo,root)
 			-- Add the Result to the tree
 			tree:add(pf_result_0, tvbuf:range(pos,field_len))
             pos = pos + field_len
-			
-			-- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
-            end
 		
 		elseif field_name == "Message Name" then
 			dprint2("============Message Name")
@@ -742,11 +728,6 @@ function mcvideo_0.dissector(tvbuf,pktinfo,root)
 			-- Add the Message Name to the tree (only 32 bits, the other 16 are spare) 
 			tree:add(pf_msg_name_0, tvbuf:range(pos,4))
             pos = pos + field_len
-			
-			-- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
-            end
 			
 		elseif field_name == "Reception Priority" then
             dprint2("============RX PRIO")
@@ -800,9 +781,14 @@ function mcvideo_1.dissector(tvbuf,pktinfo,root)
 
     while pktlen_remaining > 0 do
         dprint2("PKT remaining: ", pktlen_remaining)
-        if pktlen_remaining < MIN_FIELD_LEN then
+        local pad_calc = rtcp_padding(pos, tvbuf, pktlen, pktlen_remaining)
+        if pad_calc == -1 then
+            return
+        elseif pad_calc == -2 then
             tree:add_proto_expert_info(ef_bad_field)
             return
+        elseif pad_calc ~= nil and pad_calc > 0 then
+            pos = pad_calc
         end
 
         -- Get the Field ID (8 bits)
@@ -858,6 +844,7 @@ function mcvideo_1.dissector(tvbuf,pktinfo,root)
 
             if field_len > 2 then
                 -- Add the Reject Phrase to the tree
+                local field_start = pos
                 tree:add(pf_reject_phrase_1, tvbuf:range(pos,field_len-2))
                 pos = pos + field_len-2
 
@@ -865,9 +852,7 @@ function mcvideo_1.dissector(tvbuf,pktinfo,root)
                 pktinfo.cols.info = pk_info
 
                 -- Consume the possible padding
-                while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                    pos = pos +1
-                end
+                pos = pos + field_padding(pos, field_start, 0)
             end
 
         elseif field_name == "Queue Info" then --TODO: Not Tested
@@ -899,6 +884,7 @@ function mcvideo_1.dissector(tvbuf,pktinfo,root)
             pos = pos +1
 
             -- Add the Granted Party's Identity to the tree
+            local field_start = pos
             tree:add(pf_granted_id_1, tvbuf:range(pos,field_len))
             pos = pos + field_len
 
@@ -906,10 +892,7 @@ function mcvideo_1.dissector(tvbuf,pktinfo,root)
             pktinfo.cols.info = pk_info
 
             -- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
-            end
-            dprint2("Padding until: ", pos)
+            pos = pos + field_padding(pos, field_start, 2)
 
         elseif field_name == "Permission to Request the Transmission" then
             dprint2("============Permission to Request the Transmission")
@@ -938,14 +921,12 @@ function mcvideo_1.dissector(tvbuf,pktinfo,root)
             pos = pos +1
 
             -- Add the Queued User ID to the tree
+            local field_start = pos
             tree:add(pf_queued_id_1, tvbuf:range(pos,field_len))
             pos = pos + field_len
 
             -- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
-            end
-            dprint2("Padding until: ", pos)
+            pos = pos + field_padding(pos, field_start, 2)
 
         elseif field_name == "Message Sequence-Number" then --TODO: Not Tested
             dprint2("============Message Sequence-Number")
@@ -1001,16 +982,13 @@ function mcvideo_1.dissector(tvbuf,pktinfo,root)
             pos = pos +1
 
             -- Add the User ID to the tree
+            local field_start = pos
             tree:add(pf_user_id_1, tvbuf:range(pos,field_len))
             pos = pos + field_len
 
             -- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
-            end
+            pos = pos + field_padding(pos, field_start, 2)
 
-        
-		
 		elseif field_name == "SSRC" then
 			dprint2("============SSRC")
 			-- Get the field length (8 bits) (it should be always 6)
@@ -1020,12 +998,6 @@ function mcvideo_1.dissector(tvbuf,pktinfo,root)
 			-- Add the SSRC to the tree (only 32 bits, the other 16 are spare) 
 			tree:add(pf_ssrc_1, tvbuf:range(pos,4))
             pos = pos + field_len
-			
-			-- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
-            end
-			
 		
 		elseif field_name == "Result" then
 			dprint2("============Result")
@@ -1037,11 +1009,6 @@ function mcvideo_1.dissector(tvbuf,pktinfo,root)
 			tree:add(pf_result_1, tvbuf:range(pos,field_len))
             pos = pos + field_len
 			
-			-- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
-            end
-			
 		elseif field_name == "Message Name" then
 			dprint2("============Message Name")
 			-- Get the field length (8 bits)
@@ -1051,11 +1018,6 @@ function mcvideo_1.dissector(tvbuf,pktinfo,root)
 			-- Add the Message Name to the tree (only 32 bits, the other 16 are spare) 
 			tree:add(pf_msg_name_1, tvbuf:range(pos,4))
             pos = pos + field_len
-			
-			-- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
-            end
 			
 		elseif field_name == "Reception Priority" then
             dprint2("============RX PRIO")
@@ -1167,6 +1129,7 @@ function mcvideo_2.dissector(tvbuf,pktinfo,root)
 
             if field_len > 2 then
                 -- Add the Reject Phrase to the tree
+                local field_start = pos
                 tree:add(pf_reject_phrase_2, tvbuf:range(pos,field_len-2))
                 pos = pos + field_len-2
 
@@ -1174,9 +1137,7 @@ function mcvideo_2.dissector(tvbuf,pktinfo,root)
                 pktinfo.cols.info = pk_info
 
                 -- Consume the possible padding
-                while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                    pos = pos +1
-                end
+                pos = pos + field_padding(pos, field_start, 0)
             end
 
         elseif field_name == "Queue Info" then --TODO: Not Tested
@@ -1208,6 +1169,7 @@ function mcvideo_2.dissector(tvbuf,pktinfo,root)
             pos = pos +1
 
             -- Add the Granted Party's Identity to the tree
+            local field_start = pos
             tree:add(pf_granted_id_2, tvbuf:range(pos,field_len))
             pos = pos + field_len
 
@@ -1215,10 +1177,7 @@ function mcvideo_2.dissector(tvbuf,pktinfo,root)
             pktinfo.cols.info = pk_info
 
             -- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
-            end
-            dprint2("Padding until: ", pos)
+            pos = pos + field_padding(pos, field_start, 2)
 
         elseif field_name == "Permission to Request the Transmission" then
             dprint2("============Permission to Request the Transmission")
@@ -1247,14 +1206,12 @@ function mcvideo_2.dissector(tvbuf,pktinfo,root)
             pos = pos +1
 
             -- Add the Queued User ID to the tree
+            local field_start = pos
             tree:add(pf_queued_id_2, tvbuf:range(pos,field_len))
             pos = pos + field_len
 
             -- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
-            end
-            dprint2("Padding until: ", pos)
+            pos = pos + field_padding(pos, field_start, 2)
 
         elseif field_name == "Message Sequence-Number" then --TODO: Not Tested
             dprint2("============Message Sequence-Number")
@@ -1310,14 +1267,12 @@ function mcvideo_2.dissector(tvbuf,pktinfo,root)
             pos = pos +1
 
             -- Add the User ID to the tree
+            local field_start = pos
             tree:add(pf_user_id_2, tvbuf:range(pos,field_len))
             pos = pos + field_len
 
             -- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
-            end
-
+            pos = pos + field_padding(pos, field_start, 2)
 		
 		elseif field_name == "SSRC" then
 			dprint2("============SSRC")
@@ -1328,12 +1283,6 @@ function mcvideo_2.dissector(tvbuf,pktinfo,root)
 			-- Add the SSRC to the tree (only 32 bits, the other 16 are spare) 
 			tree:add(pf_ssrc_2, tvbuf:range(pos,4))
             pos = pos + field_len
-			
-			-- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
-            end
-			
 		
 		elseif field_name == "Result" then
 			dprint2("============Result")
@@ -1345,11 +1294,6 @@ function mcvideo_2.dissector(tvbuf,pktinfo,root)
 			tree:add(pf_result_2, tvbuf:range(pos,field_len))
             pos = pos + field_len
 			
-			-- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
-            end
-			
 		elseif field_name == "Message Name" then
 			dprint2("============Message Name")
 			-- Get the field length (8 bits)
@@ -1359,11 +1303,6 @@ function mcvideo_2.dissector(tvbuf,pktinfo,root)
 			-- Add the Message Name to the tree (only 32 bits, the other 16 are spare) 
 			tree:add(pf_msg_name_2, tvbuf:range(pos,4))
             pos = pos + field_len
-			
-			-- Consume the possible padding
-            while pos < pktlen and tvbuf:range(pos,1):uint() == 0 do
-                pos = pos +1
-            end
 			
 		elseif field_name == "Reception Priority" then
             dprint2("============RX PRIO")
