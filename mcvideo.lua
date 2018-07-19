@@ -1398,16 +1398,3 @@ end
 DissectorTable.get("rtcp.app.name"):add("MCV0", mcvideo_0.dissector)
 DissectorTable.get("rtcp.app.name"):add("MCV1", mcvideo_1.dissector)
 DissectorTable.get("rtcp.app.name"):add("MCV2", mcvideo_2.dissector)
-
--- we add all new MIME types of MCPTT protocol to the XML dissector
-DissectorTable.get("media_type"):add("application/vnd.3gpp.mcptt-info+xml", Dissector.get("xml"))
-DissectorTable.get("media_type"):add("application/vnd.3gpp.mcptt-mbms-usage-info+xml", Dissector.get("xml"))
-DissectorTable.get("media_type"):add("application/vnd.3gpp.mcptt-location-info+xml", Dissector.get("xml"))
-DissectorTable.get("media_type"):add("application/vnd.3gpp.mcptt-affiliation-command+xml", Dissector.get("xml"))
-DissectorTable.get("media_type"):add("application/vnd.3gpp.mcptt-floor-request+xml", Dissector.get("xml"))
-DissectorTable.get("media_type"):add("application/vnd.3gpp.mcptt-signed+xml", Dissector.get("xml"))
-DissectorTable.get("media_type"):add("application/vnd.3gpp.mcptt-ue-init-config+xml", Dissector.get("xml"))
-DissectorTable.get("media_type"):add("application/vnd.3gpp.mcptt-ue-config+xml", Dissector.get("xml"))
-DissectorTable.get("media_type"):add("application/vnd.3gpp.mcptt.user-profile+xml", Dissector.get("xml"))
-DissectorTable.get("media_type"):add("application/vnd.3gpp.mcptt-service-config+xml", Dissector.get("xml"))
-DissectorTable.get("media_type"):add("application/vnd.3gpp.mcvideo-info+xml", Dissector.get("xml"))
