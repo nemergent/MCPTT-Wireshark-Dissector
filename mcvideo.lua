@@ -26,6 +26,8 @@
 -- OVERVIEW:
 -- This script provides a dissector for the Mission Critical VIDEO (MCVIDEO) defined by the 3GPP in the TS 24.581.
 
+dofile("mcx-common/common.lua")
+
 -- do not modify this table
 local debug_level = {
     DISABLED = 0,
@@ -42,7 +44,7 @@ local dprint2 = function() end
 local function reset_debug_level()
     if DEBUG > debug_level.DISABLED then
         dprint = function(...)
-            print(table.concat({"Lua:", ...}," "))
+            print(table.concat({"MCVIDEO: ", ...}," "))
         end
 
         if DEBUG > debug_level.LEVEL_1 then
@@ -53,6 +55,7 @@ end
 -- call it now
 reset_debug_level()
 
+dprint("Nemergent MCVIDEO Wireshark dissector (Nemergent Initiative http://www.nemergent.com)")
 dprint2("Wireshark version = ", get_version())
 dprint2("Lua version = ", _VERSION)
 
@@ -60,23 +63,11 @@ dprint2("Lua version = ", _VERSION)
 assert(ProtoExpert.new, "Wireshark does not have the ProtoExpert class, so it's too old - get the latest 1.11.3 or higher")
 
 -- creates a Proto object, but doesn't register it yet
-
 local mcvideo_0 = Proto("mcvideo_0", "Mission Critical Video Protocol Transmission Control (0 type)")
 local mcvideo_1 = Proto("mcvideo_1", "Mission Critical Video Protocol Transmission Control (1 type)")
 local mcvideo_2 = Proto("mcvideo_2", "Mission Critical Video Protocol Transmission Control (2 type)")
 
-----------------------------------------
----- Some constants for later use ----
--- the fixed order header size
--- local FIXED_HEADER_LEN = 8 (this value did not include app name: 'MCVD')
-local FIXED_HEADER_LEN = 12
-
--- The smallest possible MCVIDEO field size
--- Has to be at least a field ID (8 bits), the value length (8 bits) and a NULL value.
-local MIN_FIELD_LEN = 2
-
 -- 3GPP TS 24.581 version 15 Release 15
-
 -- Table 9.2.3.1-1: Transmission control specific data fields
 local field_codes = {
     [0] = "Transmission Priority",
