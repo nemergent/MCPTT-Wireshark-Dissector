@@ -248,6 +248,10 @@ local pf_ind_broad      = ProtoField.new ("Broadcast Group", "mcptt.broadcast", 
 local pf_ind_sys        = ProtoField.new ("System", "mcptt.system", ftypes.UINT16, nil, base.DEC, 0x2000)
 local pf_ind_emerg      = ProtoField.new ("Emergency", "mcptt.emergency", ftypes.UINT16, nil, base.DEC, 0x1000)
 local pf_ind_immin      = ProtoField.new ("Imminent Peril", "mcptt.imm_peril", ftypes.UINT16, nil, base.DEC, 0x0800)
+local pf_ind_queue      = ProtoField.new ("Queueing", "mcptt.queueing", ftypes.UINT16, nil, base.DEC, 0x0400)
+local pf_ind_dual       = ProtoField.new ("Dual Floor", "mcptt.dual_floor", ftypes.UINT16, nil, base.DEC, 0x0200)
+local pf_ind_temp       = ProtoField.new ("Temporary Group", "mcptt.temporary", ftypes.UINT16, nil, base.DEC, 0x0100)
+local pf_ind_multi      = ProtoField.new ("Multi-talker", "mcptt.multitalker", ftypes.UINT16, nil, base.DEC, 0x0080)
 
 local pf_ssrc           = ProtoField.new ("SSRC", "mcptt.ssrc", ftypes.UINT32, nil, base.HEX)
 
@@ -300,6 +304,10 @@ mcptt.fields = {
     pf_ind_sys,
     pf_ind_emerg,
     pf_ind_immin,
+    pf_ind_queue,
+    pf_ind_dual,
+    pf_ind_temp,
+    pf_ind_multi,
     pf_msg_type,
     pf_debug,
     pf_ssrc
@@ -581,6 +589,10 @@ function mcptt.dissector(tvbuf, pktinfo, root)
             ind_tree:add(pf_ind_sys, tvbuf:range(pos, field_len))
             ind_tree:add(pf_ind_emerg, tvbuf:range(pos, field_len))
             ind_tree:add(pf_ind_immin, tvbuf:range(pos, field_len))
+            ind_tree:add(pf_ind_queue, tvbuf:range(pos, field_len))
+            ind_tree:add(pf_ind_dual, tvbuf:range(pos, field_len))
+            ind_tree:add(pf_ind_temp, tvbuf:range(pos, field_len))
+            ind_tree:add(pf_ind_multi, tvbuf:range(pos, field_len))
             pos = pos + field_len
 
         elseif field_name == "User ID" then
